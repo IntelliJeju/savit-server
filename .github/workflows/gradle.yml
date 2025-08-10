@@ -133,10 +133,10 @@ jobs:
                   - "3306:3306"
                 restart: unless-stopped
                 environment:
-                  MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+                  MYSQL_ROOT_PASSWORD: ${{MYSQL_ROOT_PASSWORD}}
                   MYSQL_DATABASE: savit_db
                   MYSQL_USER: savit
-                  MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+                  MYSQL_PASSWORD: ${{MYSQL_PASSWORD}}
                 volumes:
                   - mysql_data:/var/lib/mysql
             
