@@ -73,4 +73,23 @@
             LIMIT 1
     </select>
 
+    <update id="updateCardName">
+        UPDATE Card
+        SET card_name = #{cardName},
+            updated_at = NOW()
+        WHERE id = #{cardId}
+          AND user_id = #{userId}
+    </update>
+
+    <select id="selectCardBasicByIdAndUserId" resultType="com.savit.card.domain.Card">
+        SELECT
+            id,
+            user_id,
+            card_name,
+            updated_at
+        FROM Card
+        WHERE id = #{cardId}
+          AND user_id = #{userId}
+    </select>
+
 </mapper>

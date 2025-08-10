@@ -12,6 +12,7 @@ import io.codef.api.EasyCodefTokenMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -159,4 +160,13 @@ public class CardService {
         }).toList();
     }
 
+    @Transactional
+    public Card renameCardAndFetch(Long cardId, Long userId, String newName) {
+        if (newName == null || newName.isBlank()) return null;
+
+        int updated = cardMapper.updateCardName(cardId, userId, newName);
+        if (updated != 1) return null;
+
+        return cardMapper.selectCardBasicByIdAndUserId(cardId, userId);
+    }
 }
