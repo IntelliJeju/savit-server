@@ -133,10 +133,10 @@ jobs:
                   - "3306:3306"
                 restart: unless-stopped
                 environment:
-                  MYSQL_ROOT_PASSWORD: SavitPassword1111!
+                  MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
                   MYSQL_DATABASE: savit_db
                   MYSQL_USER: savit
-                  MYSQL_PASSWORD: SavitPassword1111!
+                  MYSQL_PASSWORD: ${MYSQL_PASSWORD}
                 volumes:
                   - mysql_data:/var/lib/mysql
             
@@ -147,9 +147,14 @@ jobs:
                   - "8080:8080"
                 depends_on:
                   - redis
+                  - mysql
+                volumes:
+                  - /home/ec2-user/app/config/application.properties:/tmp/application.properties:ro
                 environment:
                   - REDIS_HOST=redis
                   - REDIS_PORT=6379
+                command: >
+                  sh -c "cp /tmp/application.properties /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/application.properties && catalina.sh run"
                 restart: unless-stopped
 
             volumes:
