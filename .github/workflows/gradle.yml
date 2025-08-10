@@ -2,7 +2,7 @@ name: Savit Server CI/CD with Docker
 
 on:
   push:
-    branches: ['test/deploy-docker-compose-path'] # main 브랜치에 push할 때 실행 (현재 팀 레포상 dev 브랜치에서 트리거 되게끔)
+    branches: ['dev'] # main 브랜치에 push할 때 실행 (현재 팀 레포상 dev 브랜치에서 트리거 되게끔)
 
 jobs:
   deploy:
