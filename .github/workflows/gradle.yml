@@ -2,7 +2,7 @@ name: Savit Server CI/CD with Docker
 
 on:
   push:
-    branches: ['dev'] # main 브랜치에 push할 때 실행 (현재 팀 레포상 dev 브랜치에서 트리거 되게끔)
+    branches: ['test/deploy-docker-compose-path'] # main 브랜치에 push할 때 실행 (현재 팀 레포상 dev 브랜치에서 트리거 되게끔)
 
 jobs:
   deploy:
@@ -18,36 +18,36 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-# 기존 코드
-#      # Spring Legacy Build (WAR)
-#      - name: Spring Legacy Build
-#        run: ./gradlew clean build -x test # test 제외하고 빌드
+      # 기존 코드
+      #      # Spring Legacy Build (WAR)
+      #      - name: Spring Legacy Build
+      #        run: ./gradlew clean build -x test # test 제외하고 빌드
 
-# 수정 코드
+      # 수정 코드
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
       - name: Spring Legacy Build
         run: ./gradlew clean build -x test
-# 수정 코드 끝
+      # 수정 코드 끝
 
-# 기존 코드
-#      # Docker Image Build
-#      - name: Docker Image Build
-#        run: docker build -t donghyunn/savit-server .
-#
-#      # DockerHub Login
-#      - name: Docker Hub Login
-#        uses: docker/login-action@v2
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#
-#      # Docker Hub push
-#      - name: Docker Hub Push
-#        run: docker push donghyunn/savit-server
+      # 기존 코드
+      #      # Docker Image Build
+      #      - name: Docker Image Build
+      #        run: docker build -t donghyunn/savit-server .
+      #
+      #      # DockerHub Login
+      #      - name: Docker Hub Login
+      #        uses: docker/login-action@v2
+      #        with:
+      #          username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #
+      #      # Docker Hub push
+      #      - name: Docker Hub Push
+      #        run: docker push donghyunn/savit-server
 
-# 수정 코드
+      # 수정 코드
       # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -68,7 +68,7 @@ jobs:
           tags: donghyunn/savit-server:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-# 수정 코드 끝
+      # 수정 코드 끝
 
       # GET GitHub IP
       - name: Get GitHub IP
@@ -126,6 +126,20 @@ jobs:
                 restart: unless-stopped
                 command: redis-server --appendonly yes
 
+              mysql:
+                image: mysql:8.1.0
+                container_name: savit-mysql
+                ports:
+                  - "3306:3306"
+                restart: unless-stopped
+                environment:
+                  MYSQL_ROOT_PASSWORD: SavitPassword1111!
+                  MYSQL_DATABASE: savit_db
+                  MYSQL_USER: savit
+                  MYSQL_PASSWORD: SavitPassword1111!
+                volumes:
+                  - mysql_data:/var/lib/mysql
+            
               app:
                 image: donghyunn/savit-server
                 container_name: savit-server
@@ -137,9 +151,12 @@ jobs:
                   - REDIS_HOST=redis
                   - REDIS_PORT=6379
                 restart: unless-stopped
-
+                volumes:
+                  - /home/ec2-user/app/config/application.properties:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/application.properties
+            
             volumes:
               redis_data:
+              mysql_data:
             EOF
 
             # 기존 컨테이너들 정리
@@ -154,16 +171,15 @@ jobs:
             # 컨테이너 상태 확인
             sudo docker ps
 
-# 기존 코드
-#      # Remove GitHub IP from Security Group
-#      - name: Remove IP FROM security group
-#        run: |
-#          aws ec2 revoke-security-group-ingress --group-id ${{ secrets.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+      # 기존 코드
+      #      # Remove GitHub IP from Security Group
+      #      - name: Remove IP FROM security group
+      #        run: |
+      #          aws ec2 revoke-security-group-ingress --group-id ${{ secrets.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
 
-# 수정 코드
+      # 수정 코드
       # 마지막에 항상 실행되도록
       - name: Remove IP FROM security group
         if: always()  # 추가
         run: |
           aws ec2 revoke-security-group-ingress --group-id ${{ secrets.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32 || true
-
