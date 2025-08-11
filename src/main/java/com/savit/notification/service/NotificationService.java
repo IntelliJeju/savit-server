@@ -8,9 +8,12 @@ import org.springframework.stereotype.Service;
 import com.savit.notification.dto.PushNotificationRequest;
 import com.savit.notification.domain.PushNotification;
 import com.savit.notification.domain.UserFcmToken;
+import com.savit.notification.domain.ChallengeNotificationHistory;
 import com.savit.notification.mapper.NotificationMapper;
+import com.savit.notification.mapper.ChallengeNotificationHistoryMapper;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +25,7 @@ public class NotificationService {
     private final FirebaseMessaging firebaseMessaging;
     private final NotificationMapper notificationMapper;
     private final OpenAIInternalService openAIInternalService;
+    private final ChallengeNotificationHistoryMapper challengeNotificationHistoryMapper;
 
     public String sendNotification(PushNotificationRequest request) {
         return sendNotification(request, null);
@@ -203,22 +207,76 @@ public class NotificationService {
     }
     
     /**
-     * 챌린지 성공 알림 - 임시용 생성, 이렇게 안쓸듯..
+     * 챌린지 성공 알림 - 실제 운영용
+     * 중복 알림 방지 로직 포함
      */
-    public void sendChallengeSuccessNotification(Long userId, String challengeTitle, String prize) {
-        String title = "🎉 챌린지 성공!";
-        String body = String.format("'%s' 챌린지를 성공했어요! 상금: %s", challengeTitle, prize);
-        sendNotificationToUser(userId, title, body);
-        log.info("챌린지 성공 알림 전송 완료 - 사용자: {}, 챌린지: {}", userId, challengeTitle);
+    public void sendChallengeSuccessNotification(Long userId, Long challengeId, String challengeTitle, String prize) {
+        try {
+            String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            
+            // 중복 알림 체크
+            if (challengeNotificationHistoryMapper.existsByUserChallengeTypeDate(userId, challengeId, "SUCCESS", today)) {
+                log.debug("사용자 {} 챌린지 {} 성공 알림 이미 발송됨 - 중복 발송 방지", userId, challengeTitle);
+                return;
+            }
+            
+            String title = "🎉 챌린지 성공!";
+            String body = String.format("'%s' 챌린지를 성공했어요! 상금: %s", challengeTitle, prize);
+            sendNotificationToUser(userId, title, body);
+            
+            // 알림 발송 이력 저장
+            ChallengeNotificationHistory history = ChallengeNotificationHistory.createSuccess(userId, challengeId, challengeTitle, today);
+            challengeNotificationHistoryMapper.insertNotificationHistory(history);
+            
+            log.info("챌린지 성공 알림 전송 완료 - 사용자: {}, 챌린지: {}, 상금: {}", userId, challengeTitle, prize);
+            
+        } catch (Exception e) {
+            log.error("챌린지 성공 알림 전송 실패 - 사용자: {}, 챌린지: {}", userId, challengeTitle, e);
+        }
     }
     
     /**
-     * 챌린지 실패 알림 - 임시용 생성, 이렇게 안쓸듯..
+     * 챌린지 실패 알림 - 실제 운영용
+     * 중복 알림 방지 로직 포함
+     */
+    public void sendChallengeFailNotification(Long userId, Long challengeId, String challengeTitle) {
+        try {
+            String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            
+            // 중복 알림 체크
+            if (challengeNotificationHistoryMapper.existsByUserChallengeTypeDate(userId, challengeId, "FAIL", today)) {
+                log.debug("사용자 {} 챌린지 {} 실패 알림 이미 발송됨 - 중복 발송 방지", userId, challengeTitle);
+                return;
+            }
+            
+            String title = "😢 챌린지 실패";
+            String body = String.format("'%s' 챌린지에 실패했어요. 다음에 더 열심히 해봐요!", challengeTitle);
+            sendNotificationToUser(userId, title, body);
+            
+            // 알림 발송 이력 저장
+            ChallengeNotificationHistory history = ChallengeNotificationHistory.createFail(userId, challengeId, challengeTitle, today);
+            challengeNotificationHistoryMapper.insertNotificationHistory(history);
+            
+            log.info("챌린지 실패 알림 전송 완료 - 사용자: {}, 챌린지: {}", userId, challengeTitle);
+            
+        } catch (Exception e) {
+            log.error("챌린지 실패 알림 전송 실패 - 사용자: {}, 챌린지: {}", userId, challengeTitle, e);
+        }
+    }
+    
+    /**
+     * 챌린지 성공 알림 - 테스트용 (하위 호환성)
+     */
+    public void sendChallengeSuccessNotification(Long userId, String challengeTitle, String prize) {
+        // 테스트용은 challengeId를 -1로 설정하여 중복 체크 우회
+        sendChallengeSuccessNotification(userId, -1L, challengeTitle, prize);
+    }
+    
+    /**
+     * 챌린지 실패 알림 - 테스트용 (하위 호환성)
      */
     public void sendChallengeFailNotification(Long userId, String challengeTitle) {
-        String title = "😢 챌린지 실패";
-        String body = String.format("'%s' 챌린지에 실패했어요. 다음에 더 열심히 해봐요!", challengeTitle);
-        sendNotificationToUser(userId, title, body);
-        log.info("챌린지 실패 알림 전송 완료 - 사용자: {}, 챌린지: {}", userId, challengeTitle);
+        // 테스트용은 challengeId를 -1로 설정하여 중복 체크 우회
+        sendChallengeFailNotification(userId, -1L, challengeTitle);
     }
 }

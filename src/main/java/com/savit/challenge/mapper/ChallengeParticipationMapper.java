@@ -4,6 +4,7 @@ import com.savit.challenge.dto.ChallengeUpdateRequestDTO;
 import com.savit.challenge.dto.ChallengeSummaryDTO;
 import com.savit.challenge.dto.ParticipantInfo;
 import com.savit.challenge.dto.ParticipationStatusDTO;
+import com.savit.challenge.dto.ChallengeFailedParticipantDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -44,4 +45,7 @@ public interface ChallengeParticipationMapper {
     ParticipationStatusDTO findParticipationById (Long participationId);
   
     List<ChallengeSummaryDTO>  selectChallengeSummary(Long userId);
+    
+    // 새로 실패한 참여자 목록 조회 (알림 발송용)
+    List<ChallengeFailedParticipantDTO> findNewlyFailedParticipants(@Param("targetDate") String targetDate);
 }

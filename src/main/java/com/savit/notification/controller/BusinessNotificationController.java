@@ -1,5 +1,7 @@
 package com.savit.notification.controller;
 
+import com.savit.challenge.dto.ChallengeFailedParticipantDTO;
+import com.savit.challenge.service.ChallengeParticipationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -7,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.savit.notification.service.NotificationService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -15,6 +18,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class BusinessNotificationController {
     private final NotificationService notificationService;
+    private final ChallengeParticipationService challengeParticipationService;
     
     /**
      * 예산 초과 알림 테스트
@@ -105,19 +109,19 @@ public class BusinessNotificationController {
     }
     
     /**
-     * 챌린지 성공 알림 테스트 - 임시용 생성, 이렇게 안쓸듯..
+     * 새로 실패한 참여자 목록 조회 테스트
      */
-    @PostMapping("/challenge-success/{userId}")
-    public ResponseEntity<Map<String, String>> sendChallengeSuccessTest(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "30일 용돈기입장 쓰기") String challengeTitle,
-            @RequestParam(defaultValue = "10,000원") String prize) {
-        
-        Map<String, String> response = new HashMap<>();
+    @GetMapping("/challenge/newly-failed")
+    public ResponseEntity<Map<String, Object>> getNewlyFailedParticipants() {
+        Map<String, Object> response = new HashMap<>();
         try {
-            notificationService.sendChallengeSuccessNotification(userId, challengeTitle, prize);
+            List<ChallengeFailedParticipantDTO> failedParticipants = challengeParticipationService.findNewlyFailedParticipants();
+            
             response.put("status", "success");
-            response.put("message", "챌린지 성공 알림 전송 완료");
+            response.put("count", failedParticipants.size());
+            response.put("participants", failedParticipants);
+            response.put("message", "새로 실패한 참여자 조회 완료");
+            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("status", "error");
@@ -127,18 +131,20 @@ public class BusinessNotificationController {
     }
     
     /**
-     * 챌린지 실패 알림 테스트 - 임시용 생성, 이렇게 안쓸듯..
+     * 실제 운영용 챌린지 실패 알림 테스트 (중복 방지 포함)
      */
-    @PostMapping("/challenge-fail/{userId}")
-    public ResponseEntity<Map<String, String>> sendChallengeFailTest(
+    @PostMapping("/challenge-fail-real/{userId}/{challengeId}")
+    public ResponseEntity<Map<String, String>> sendChallengeFailRealTest(
             @PathVariable Long userId,
-            @RequestParam(defaultValue = "30일 용돈기입장 쓰기") String challengeTitle) {
+            @PathVariable Long challengeId,
+            @RequestParam(defaultValue = "테스트 챌린지") String challengeTitle) {
         
         Map<String, String> response = new HashMap<>();
         try {
-            notificationService.sendChallengeFailNotification(userId, challengeTitle);
+            // 실제 운영용 메서드 호출 (중복 방지 로직 포함)
+            notificationService.sendChallengeFailNotification(userId, challengeId, challengeTitle);
             response.put("status", "success");
-            response.put("message", "챌린지 실패 알림 전송 완료");
+            response.put("message", "실제 운영용 챌린지 실패 알림 전송 완료 (중복 방지 포함)");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("status", "error");

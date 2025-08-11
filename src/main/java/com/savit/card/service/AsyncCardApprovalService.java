@@ -3,11 +3,14 @@ package com.savit.card.service;
 import com.savit.budget.service.BudgetMonitoringService;
 import com.savit.challenge.mapper.ChallengeParticipationMapper;
 import com.savit.challenge.service.ChallengeParticipationService;
+import com.savit.challenge.dto.ChallengeFailedParticipantDTO;
+import com.savit.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -22,6 +25,7 @@ public class AsyncCardApprovalService {
     private final CardApprovalService cardApprovalService;
     private final BudgetMonitoringService budgetMonitoringService;
     private final ChallengeParticipationService challengeParticipationService;
+    private final NotificationService notificationService;
     
     /**
      * 내부 메서드 호출 방식 - 단일 사용자 카드 승인내역 비동기 처리
@@ -46,6 +50,10 @@ public class AsyncCardApprovalService {
                 try {
                     challengeParticipationService.updateChallengeProgressForNewTransactions();
                     log.debug("사용자 {} 챌린지 상태 업데이트 완료", userId);
+                    
+                    // 새로 실패한 참여자들에게 실패 알림 발송
+                    sendChallengeFailNotifications();
+                    
                 } catch (Exception e) {
                     log.error("사용자 {} 챌린지 상태 업데이트 실패 - 예산 모니터링은 정상 처리됨", userId,e);
                     // 챌린지 처리 실패가 전체 프로세스 중단시키지 않도록 continue~
@@ -82,6 +90,10 @@ public class AsyncCardApprovalService {
                 try {
                     challengeParticipationService.updateChallengeProgressForNewTransactions();
                     log.debug("사용자 {} 카드 {} 챌린지 상태 업데이트 완료", userId, cardId);
+                    
+                    // 새로 실패한 참여자들에게 실패 알림 발송
+                    sendChallengeFailNotifications();
+                    
                 } catch (Exception e) {
                     log.error("사용자 {} 카드 {} 챌린지 상태 업데이트 실패", userId, cardId, e);
                 }
@@ -104,5 +116,47 @@ public class AsyncCardApprovalService {
      */
     public void logAsyncProcessingStatus(int totalUsers, int processedUsers) {
         log.info("비동기 카드 승인내역 처리 현황 - 전체: {}명, 처리 시작: {}명", totalUsers, processedUsers);
+    }
+    
+    /**
+     * 새로 실패한 챌린지 참여자들에게 실패 알림 발송
+     * 중복 알림 방지 로직 포함
+     */
+    private void sendChallengeFailNotifications() {
+        try {
+            List<ChallengeFailedParticipantDTO> failedParticipants = challengeParticipationService.findNewlyFailedParticipants();
+            
+            if (failedParticipants.isEmpty()) {
+                log.debug("새로 실패한 챌린지 참여자가 없습니다.");
+                return;
+            }
+            
+            log.info("새로 실패한 챌린지 참여자 {}명에게 알림 발송 시작", failedParticipants.size());
+            
+            int sentCount = 0;
+            for (ChallengeFailedParticipantDTO participant : failedParticipants) {
+                try {
+                    // 실제 운영용 메서드 호출 (중복 방지 로직 포함)
+                    notificationService.sendChallengeFailNotification(
+                        participant.getUserId(),
+                        participant.getChallengeId(),
+                        participant.getChallengeTitle()
+                    );
+                    sentCount++;
+                    
+                    // 알림 발송 간격 조절
+                    Thread.sleep(300);
+                    
+                } catch (Exception e) {
+                    log.error("사용자 {} 챌린지 '{}' 실패 알림 발송 실패", 
+                            participant.getUserId(), participant.getChallengeTitle(), e);
+                }
+            }
+            
+            log.info("챌린지 실패 알림 발송 완료 - 대상: {}명, 발송: {}명", failedParticipants.size(), sentCount);
+            
+        } catch (Exception e) {
+            log.error("챌린지 실패 알림 발송 처리 중 오류 발생", e);
+        }
     }
 }

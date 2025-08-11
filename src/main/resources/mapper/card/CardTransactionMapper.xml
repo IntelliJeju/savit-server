@@ -128,7 +128,7 @@
                ct.res_member_store_type,
                ct.created_at,
                ct.updated_at
-        from CardTransaction
+        from CardTransaction ct
         where ct.created_at &gt;= #{lastProcessedTime}
           and ct.res_cancel_yn != 'Y'
   and ct.category_id is not null

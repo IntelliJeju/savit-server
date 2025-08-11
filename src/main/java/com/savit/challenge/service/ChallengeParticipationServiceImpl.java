@@ -5,6 +5,7 @@ import com.savit.card.mapper.CardTransactionMapper;
 import com.savit.challenge.dto.ChallengeProgressDTO;
 import com.savit.challenge.dto.ChallengeUpdateRequestDTO;
 import com.savit.challenge.dto.ParticipationStatusDTO;
+import com.savit.challenge.dto.ChallengeFailedParticipantDTO;
 import com.savit.challenge.mapper.ChallengeParticipationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -268,6 +271,34 @@ public class ChallengeParticipationServiceImpl implements ChallengeParticipation
         } catch (Exception e) {
             log.error("❌ DB 업데이트 실패 - 참여ID: {}", updateRequest.getParticipationId(), e);
             throw new RuntimeException("DB 업데이트 실패", e);
+        }
+    }
+
+    @Override
+    public List<ChallengeFailedParticipantDTO> findNewlyFailedParticipants() {
+        try {
+            String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            log.info("🔍 새로 실패한 챌린지 참여자 조회 시작 - 대상날짜: {}", today);
+            
+            // 오늘 FAIL로 변경된 참여자들 조회 (완료시간이 오늘인 FAIL 상태)
+            List<ChallengeFailedParticipantDTO> failedParticipants = challengeParticipationMapper.findNewlyFailedParticipants(today);
+            
+            log.info("📊 새로 실패한 챌린지 참여자 조회 완료 - {}명", failedParticipants.size());
+            
+            if (!failedParticipants.isEmpty()) {
+                for (int i = 0; i < failedParticipants.size(); i++) {
+                    ChallengeFailedParticipantDTO participant = failedParticipants.get(i);
+                    log.info("❌ 실패참여자[{}] - 사용자: {}, 챌린지: '{}', 상태: {}", 
+                            i+1, participant.getUserId(), participant.getChallengeTitle(), participant.getStatus());
+                }
+            }
+            
+            return failedParticipants;
+            
+        } catch (Exception e) {
+            log.error("❌ 새로 실패한 참여자 조회 실패", e);
+            // 예외 발생 시 빈 리스트 반환하여 알림 프로세스가 중단되지 않도록 함
+            return new ArrayList<>();
         }
     }
 }

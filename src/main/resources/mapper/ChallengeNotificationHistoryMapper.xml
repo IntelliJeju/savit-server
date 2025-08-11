@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savit.notification.mapper.ChallengeNotificationHistoryMapper">
+    
+    <!-- 알림 발송 이력 저장 -->
+    <insert id="insertNotificationHistory" parameterType="com.savit.notification.domain.ChallengeNotificationHistory">
+        INSERT INTO ChallengeNotificationHistory (
+            user_id,
+            challenge_id,
+            notification_type,
+            challenge_title,
+            sent_at,
+            target_date
+        ) VALUES (
+            #{userId},
+            #{challengeId},
+            #{notificationType},
+            #{challengeTitle},
+            #{sentAt},
+            #{targetDate}
+        )
+    </insert>
+    
+    <!-- 중복 알림 체크 -->
+    <select id="existsByUserChallengeTypeDate" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM ChallengeNotificationHistory
+        WHERE user_id = #{userId}
+          AND challenge_id = #{challengeId}
+          AND notification_type = #{notificationType}
+          AND target_date = #{targetDate}
+    </select>
+    
+    <!-- 사용자별 특정 챌린지 알림 이력 조회 -->
+    <select id="findByUserIdAndChallengeId" resultType="com.savit.notification.domain.ChallengeNotificationHistory">
+        SELECT 
+            id,
+            user_id AS userId,
+            challenge_id AS challengeId,
+            notification_type AS notificationType,
+            challenge_title AS challengeTitle,
+            sent_at AS sentAt,
+            target_date AS targetDate
+        FROM ChallengeNotificationHistory
+        WHERE user_id = #{userId}
+          AND challenge_id = #{challengeId}
+        ORDER BY sent_at DESC
+    </select>
+    
+    <!-- 특정 날짜 알림 발송 이력 조회 -->
+    <select id="findByTargetDate" resultType="com.savit.notification.domain.ChallengeNotificationHistory">
+        SELECT 
+            id,
+            user_id AS userId,
+            challenge_id AS challengeId,
+            notification_type AS notificationType,
+            challenge_title AS challengeTitle,
+            sent_at AS sentAt,
+            target_date AS targetDate
+        FROM ChallengeNotificationHistory
+        WHERE target_date = #{targetDate}
+        ORDER BY sent_at DESC
+    </select>
+    
+    <!-- 오래된 알림 이력 정리 -->
+    <delete id="deleteOldNotificationHistory">
+        DELETE FROM ChallengeNotificationHistory
+        WHERE sent_at &lt; DATE_SUB(NOW(), INTERVAL #{retentionDays} DAY)
+    </delete>
+    
+</mapper>
