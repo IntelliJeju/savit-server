@@ -101,56 +101,5 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    /**
-     * Refresh Token으로 새로운 Access Token 발급
-     */
-    public LoginResponseDTO refreshAccessToken(String refreshToken) {
-        try {
-            log.info("Refresh Token으로 Access Token 갱신 시작");
 
-            // 1. Refresh Token 유효성 검증
-            if (!jwtTokenProvider.validateToken(refreshToken)) {
-                throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
-            }
-
-            // 2. Refresh Token인지 확인
-            if (!jwtTokenProvider.isRefreshToken(refreshToken)) {
-                throw new IllegalArgumentException("Refresh Token이 아닙니다.");
-            }
-
-            // 3. Refresh Token에서 userId 추출
-            Long userId = Long.parseLong(jwtTokenProvider.getUserId(refreshToken));
-            User user = userService.findById(userId);  // userId 기반 조회
-
-            if (user == null) {
-                throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
-            }
-
-            // 4. 새로운 Access Token 생성 (userId 기반)
-            String newAccessToken = jwtTokenProvider.createAccessToken(String.valueOf(userId));
-
-            log.info("Access Token 갱신 완료 - userId: {}", userId);
-
-            return LoginResponseDTO.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(refreshToken)
-                    .user(User.builder()
-                            .id(user.getId())
-                            .email(user.getEmail())
-                            .nickname(user.getNickname())
-                            .profileImage(user.getProfileImage())
-                            .kakaoUserId(user.getKakaoUserId())
-                            .createdAt(user.getCreatedAt())
-                            .updatedAt(user.getUpdatedAt())
-                            .build())
-                    .accessTokenExpiresIn(3600L)
-                    .success(true)
-                    .message("토큰 갱신 성공")
-                    .build();
-
-        } catch (Exception e) {
-            log.error("토큰 갱신 실패:", e);
-            throw new RuntimeException("토큰 갱신 실패", e);
-        }
-    }
 }

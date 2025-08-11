@@ -11,10 +11,5 @@ public interface AuthService {
      */
     LoginResponseDTO kakaoLogin(String code);
 
-    /**
-     * Refresh Token으로 새로운 Access Token 발급
-     * @param refreshToken 갱신용 토큰
-     * @return 새로운 토큰 정보
-     */
-    LoginResponseDTO refreshAccessToken(String refreshToken);
+
 }

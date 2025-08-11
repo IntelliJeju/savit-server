@@ -74,6 +74,7 @@ public class AuthController {
 
             log.info("======== 카카오 로그인 처리 완료 ==========");
             log.info("accessToken = {}", loginResponse.getAccessToken());
+            log.info("refreshToken = {}", loginResponse.getRefreshToken());
 
             // 성공 시 프론트엔드로 리다이렉트 (토큰 포함)
             String redirectUrl = "http://localhost:8080/auth/login/callback" +
@@ -96,36 +97,6 @@ public class AuthController {
         }
     }
 
-
-    /**
-     * Refresh Token으로 Access Token 갱신
-     */
-    @PostMapping("/refresh")
-    @ResponseBody
-    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
-        try {
-            log.info("토큰 갱신 요청");
-
-            if (request.getRefreshToken() == null || request.getRefreshToken().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Refresh Token이 필요합니다.");
-            }
-
-            // Refresh Token으로 새 Access Token 발급
-            LoginResponseDTO response = authService.refreshAccessToken(request.getRefreshToken());
-
-            log.info("토큰 갱신 성공");
-            return ResponseEntity.ok(response);
-
-        } catch (IllegalArgumentException e) {
-            log.error("토큰 갱신 실패 - 잘못된 요청: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("유효하지 않은 Refresh Token입니다.");
-        } catch (Exception e) {
-            log.error("토큰 갱신 실패:", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("토큰 갱신 중 오류가 발생했습니다.");
-        }
-    }
 
     /**
      * 로그아웃 (토큰 무효화)
