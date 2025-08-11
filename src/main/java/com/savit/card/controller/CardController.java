@@ -3,6 +3,7 @@ package com.savit.card.controller;
 import com.savit.card.dto.CardDetailResponseDTO;
 import com.savit.card.dto.CardRegisterRequestDTO;
 import com.savit.card.service.CardService;
+import com.savit.card.service.ClovaOCRService;
 import com.savit.security.JwtUtil;
 import com.savit.user.domain.User;
 import com.savit.user.service.UserService;
@@ -24,12 +25,19 @@ public class CardController {
     private final CardService cardService;
     private final JwtUtil jwtUtil;
     private final UserService userService;
+    private final ClovaOCRService clovaOCRService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerCardAndFetch(
-            @RequestBody @Valid CardRegisterRequestDTO req, HttpServletRequest request) {
+            // MultiPartFile 추가
+            @ModelAttribute @Valid CardRegisterRequestDTO req, HttpServletRequest request) {
 
         try {
+            // OCR로 카드번호 추출
+            if(req.getCardImage() != null && !req.getCardImage().isEmpty()){
+                String ocrCardNumber = clovaOCRService.extractCardNumber(req.getCardImage());
+                req.setEncryptedCardNo(ocrCardNumber);
+            }
             Long userId = jwtUtil.getUserIdFromToken(request);
 
             User user = userService.findById(userId);
