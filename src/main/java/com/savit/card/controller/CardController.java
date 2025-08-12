@@ -8,8 +8,10 @@ import com.savit.security.JwtUtil;
 import com.savit.user.domain.User;
 import com.savit.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,13 +28,35 @@ public class CardController {
     private final JwtUtil jwtUtil;
     private final UserService userService;
     private final ClovaOCRService clovaOCRService;
-
-    @PostMapping("/register")
+    @PostMapping(value="/register", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerCardAndFetch(
-            // MultiPartFile 추가
-            @ModelAttribute @Valid CardRegisterRequestDTO req, HttpServletRequest request) {
+            @RequestParam("organization") String organization,
+            @RequestParam("loginId") String loginId,
+            @RequestParam("loginPw") String loginPw,
+            @RequestParam("birthDate") String birthDate,
+            @RequestParam("cardPassword") String cardPassword,
+            @RequestParam(value="cardImage", required=false) MultipartFile cardImage,
+            HttpServletRequest request) throws Exception {
+
+
+        System.out.println("=== @RequestParam으로 받은 데이터 ===");
+        System.out.println("organization: [" + organization + "]");
+        System.out.println("loginId: [" + loginId + "]");
+        System.out.println("loginPw: [" + loginPw + "]");
+        System.out.println("birthDate: [" + birthDate + "]");
+        System.out.println("cardPassword: [" + cardPassword + "]");
+        System.out.println("cardImage: [" + (cardImage != null ? cardImage.getOriginalFilename() : "null") + "]");
 
         try {
+            // DTO 수동 생성
+            CardRegisterRequestDTO req = new CardRegisterRequestDTO();
+            req.setOrganization(organization);
+            req.setLoginId(loginId);
+            req.setLoginPw(loginPw);
+            req.setBirthDate(birthDate);
+            req.setCardPassword(cardPassword);
+            req.setCardImage(cardImage);
+
             // OCR로 카드번호 추출
             if(req.getCardImage() != null && !req.getCardImage().isEmpty()){
                 String ocrCardNumber = clovaOCRService.extractCardNumber(req.getCardImage());

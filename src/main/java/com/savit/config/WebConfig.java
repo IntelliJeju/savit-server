@@ -12,6 +12,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.Filter;
+import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletRegistration;
 
 @Configuration
@@ -54,6 +55,14 @@ public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitiali
     @Override
     protected void customizeRegistration(ServletRegistration.Dynamic registration) {
         registration.setInitParameter("throwExceptionIfNoHandlerFound", "true");
+        String location = System.getProperty("java.io.tmpdir"); // 톰캣이 쓸 수 있는 경로
+        long maxFileSize = 20L * 1024 * 1024;     // 20MB
+        long maxRequestSize = 40L * 1024 * 1024;  // 40MB
+        int fileSizeThreshold = 0;                // 즉시 디스크
+
+        registration.setMultipartConfig(
+                new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold)
+        );
     }
 
     // CORS 설정 Bean (Vue 프론트 허용)
