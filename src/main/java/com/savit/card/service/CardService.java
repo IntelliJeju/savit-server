@@ -46,6 +46,10 @@ public class CardService {
         account.put("id", req.getLoginId());
         // 카드사 비밀번호 테스트용으로 여기서 암호화 진행
         // 추후 req.fetLoginPw() 만 사용
+        if (req.getLoginPw() == null) {
+            throw new IllegalArgumentException("로그인 비밀번호가 필요합니다.");
+        }
+
         account.put("password", codefUtil.encryptRSA(req.getLoginPw()));
         account.put("birthDate", req.getBirthDate());
 
