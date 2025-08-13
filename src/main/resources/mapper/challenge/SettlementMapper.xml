@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savit.challenge.mapper.SettlementMapper">
+
+    <!-- 정산 대상 잠금 -->
+    <select id="selectForUpdate" resultType="com.savit.challenge.domain.ChallengeParticipationVO">
+        SELECT id,
+               challenge_id AS challengeId,
+               user_id      AS userId,
+               status,
+               challenge_amount AS challengeAmount,
+               my_fee       AS myFee,
+               prize
+        FROM ChallengeParticipation
+        WHERE challenge_id = #{challengeId}
+            FOR UPDATE
+    </select>
+
+    <!-- 멱등 가드: 이미 prize가 기록된 적 있는지 확인 -->
+    <select id="existsAnyPrizeWritten" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM ChallengeParticipation
+        WHERE challenge_id = #{challengeId}
+        AND prize IS NOT NULL
+        AND prize &lt;&gt; 0
+    </select>
+
+    <!-- 성공자 상금 누적 -->
+    <update id="updateWinnerPrize">
+        UPDATE ChallengeParticipation
+        SET prize = COALESCE(prize,0) + #{payout},
+            updated_at = NOW()
+        WHERE challenge_id = #{challengeId}
+          AND user_id = #{userId}
+    </update>
+
+    <!-- 실패자 예치금 회수(음수 기록) -->
+    <update id="updateLoserPrize">
+        UPDATE ChallengeParticipation
+        SET prize = COALESCE(prize,0) - #{amount},
+            updated_at = NOW()
+        WHERE challenge_id = #{challengeId}
+          AND user_id = #{userId}
+    </update>
+
+    <!-- 포인트 증감(UPSERT) -->
+    <insert id="upsertPoint">
+        INSERT INTO Point (user_id, amount, created_at, updated_at)
+        VALUES (#{userId}, #{delta}, NOW(), NOW())
+            ON DUPLICATE KEY UPDATE
+                                 amount = amount + VALUES(amount),
+                                 updated_at = NOW()
+    </insert>
+
+    <!-- 운영 계정 -->
+    <select id="findUserIdByEmail" resultType="long">
+        SELECT id FROM `User` WHERE email = #{email} LIMIT 1
+    </select>
+
+</mapper>
