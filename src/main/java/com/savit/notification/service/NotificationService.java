@@ -172,13 +172,26 @@ public class NotificationService {
                 String aiResponse = openAIInternalService.getDailyAnswers().get(0);
                 String[] aiMessages = aiResponse.split("\\n");  // 정규표현식에서 개행 문자 찾는 용도로 \\n 사용함
                 
-                // 유효한 메시지만 필터링
+                // 유효한 메시지만 필터링 (메타데이터 제거 + 5개 제한)
                 List<String> validMessages = new ArrayList<>();
                 for (String message : aiMessages) {
                     String trimmed = message.trim();
+                    
+                    // 메타데이터 키워드 제외
+                    if (isMetadataKeyword(trimmed)) {
+                        log.debug("잔소리 메타데이터 제외: {}", trimmed);
+                        continue;
+                    }
+                    
                     // 빈 문자열이 아니고, 10자 이상이고, 한글이 포함된 메시지만 선택
                     if (!trimmed.isEmpty() && trimmed.length() > 10 && trimmed.matches(".*[가-힣].*")) {
                         validMessages.add(trimmed);
+                        
+                        // 최대 5개까지만 수집 (키워드 제외 안되는거 대비한 안전장치임!)
+                        if (validMessages.size() >= 5) {
+                            log.debug("잔소리 메시지 5개 수집 완료");
+                            break;
+                        }
                     }
                 }
                 
@@ -211,7 +224,7 @@ public class NotificationService {
      */
     public void sendDailyWrapUpNotification(Long userId) {
         String wrapUpMessage = getDailyWrapUpMessage();
-        String title = "🌙 하루 마무리";
+        String title = "💬 Savit 한마디";
         sendNotificationToUser(userId, title, wrapUpMessage);
         log.info("하루 마무리 알림 전송 완료 - 사용자: {}, 메시지: {}", userId, wrapUpMessage);
     }
@@ -225,17 +238,42 @@ public class NotificationService {
         try {
             if(openAIInternalService.isServiceEnabled() && !openAIInternalService.getDailyWrapUpAnswers().isEmpty()) {
                 String aiResponse = openAIInternalService.getDailyWrapUpAnswers().get(0);
-                String[] aiMessages = aiResponse.split("\\n");  // 정규표현식에서 개행 문자 찾는 용도로 \\n 사용함
+                log.info("하루 마무리 원본 AI 응답: {}", aiResponse);
                 
-                // 유효한 메시지만 필터링
+                String[] aiMessages = aiResponse.split("\\n");  // 정규표현식에서 개행 문자 찾는 용도로 \\n 사용함
+                log.info("분리된 메시지 개수: {}", aiMessages.length);
+                
+                // 유효한 메시지만 필터링 (메타데이터 제거 + 5개 제한)
                 List<String> validMessages = new ArrayList<>();
-                for (String message : aiMessages) {
+                for (int i = 0; i < aiMessages.length; i++) {
+                    String message = aiMessages[i];
                     String trimmed = message.trim();
+                    
+                    log.debug("메시지 {}: '{}' (길이: {})", i, trimmed, trimmed.length());
+                    
+                    // 메타데이터 키워드 제외
+                    if (isMetadataKeyword(trimmed)) {
+                        log.info("하루 마무리 메타데이터 제외: {}", trimmed);
+                        continue;
+                    }
+                    
                     // 빈 문자열이 아니고, 10자 이상이고, 한글이 포함된 메시지만 선택
                     if (!trimmed.isEmpty() && trimmed.length() > 10 && trimmed.matches(".*[가-힣].*")) {
                         validMessages.add(trimmed);
+                        log.info("유효한 하루 마무리 메시지 추가: {}", trimmed);
+                        
+                        // 최대 5개까지만 수집 (키워드 제외 안되는거 대비한 안전장치임!)
+                        if (validMessages.size() >= 5) {
+                            log.info("하루 마무리 메시지 5개 수집 완료");
+                            break;
+                        }
+                    } else {
+                        log.debug("하루 마무리 메시지 조건 불충족: '{}' (길이: {}, 한글포함: {})", 
+                                trimmed, trimmed.length(), trimmed.matches(".*[가-힣].*"));
                     }
                 }
+                
+                log.info("필터링 후 유효한 하루 마무리 메시지 개수: {}", validMessages.size());
                 
                 if (!validMessages.isEmpty()) {
                     String selectedMessage = validMessages.get((int) (Math.random() * validMessages.size()));
@@ -259,6 +297,51 @@ public class NotificationService {
             "작은 절약도 쌓이면 큰 돈이에요! 오늘도 수고했어요 💎💫"
         };
         return defaultWrapUpMessages[(int) (Math.random() * defaultWrapUpMessages.length)];
+    }
+    
+    /**
+     * 메타데이터 키워드 판별 (Structured Outputs 파싱 개선)
+     * 필요 없는 키워드 다 빼버리기
+     * @param text 검사할 텍스트
+     * @return 메타데이터인지 여부
+     */
+    private boolean isMetadataKeyword(String text) {
+        if (text == null || text.isEmpty()) {
+            return true;
+        }
+        
+        // 정확한 메타데이터 키워드들만
+        String[] exactMatches = {
+            "generatedDate", "generated_date", "type", "tone", 
+            "nagging", "daily_wrap_up", "friendly", "strict", "humorous",
+            "encouraging", "reflective", "motivational",
+            // 하루 마무리 전용 메타데이터 패턴들 추가 완료
+            "end-of-day", "end_of_day", "financial", "habits", 
+            "spending", "budget", "goals", "reflection",
+            "young", "professionals", "messages"
+        };
+        
+        // 정확한 매치만 확인
+        for (String match : exactMatches) {
+            if (text.equals(match)) {
+                log.debug("정확한 메타데이터 매치: {}", text);
+                return true;
+            }
+        }
+        
+        // 날짜 패턴 확인
+        if (text.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+            log.debug("날짜 패턴 매치: {}", text);
+            return true;
+        }
+        
+        // 매우 짧은 영문 키워드만 (3자 이하)
+        if (text.length() <= 3 && text.matches("^[a-zA-Z_]+$")) {
+            log.debug("짧은 영문 키워드: {}", text);
+            return true;
+        }
+        
+        return false;
     }
     
     /**
