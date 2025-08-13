@@ -36,10 +36,20 @@ public class FirebaseConfig  {
     public FirebaseApp firebaseApp() {
         try {
             if(FirebaseApp.getApps().isEmpty()) {
+                InputStream inputStream;
+
+                // 외부 마운트된 파일 경로로 시도
+                java.io.File externalFile = new java.io.File(firebaseConfigPath);
+                if (externalFile.exists()) {
+                    log.info("외부 Firebase 설정 파일 사용: {}", firebaseConfigPath);
+                    inputStream = new java.io.FileInputStream(externalFile);
+                } else {
+                    log.info("클래스패스 Firebase 설정 파일 사용: {}", firebaseConfigPath);
+                    inputStream = new ClassPathResource(firebaseConfigPath).getInputStream();
+                }
+
                 FirebaseOptions options = FirebaseOptions.builder()
-                        .setCredentials(
-                                GoogleCredentials.fromStream(new ClassPathResource(firebaseConfigPath).getInputStream())
-                        )
+                        .setCredentials(GoogleCredentials.fromStream(inputStream))
                         .build();
 
                 log.info("firebase app 초기화 완료");
@@ -48,7 +58,6 @@ public class FirebaseConfig  {
                 // 이미 파베 앱 만들어졌으면 기존의 디폴트 앱 가져와서 반환
                 return FirebaseApp.getInstance();
             }
-
 
         } catch (IOException exception) {
             log.error("firebase app 초기화 실패 {}", exception.getMessage());

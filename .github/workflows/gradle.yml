@@ -113,8 +113,11 @@ jobs:
             sudo docker stop savit-server || true
             sudo docker rm savit-server || true
             
+            # 기존 컨테이너들 정리
+            sudo docker-compose down || true
+            
             # Docker Compose 파일 생성
-            cat > docker-compose.yml << 'EOF'
+            cat > docker-compose.yml << EOF
             services:
               redis:
                 image: redis:7-alpine
@@ -141,7 +144,7 @@ jobs:
                   - mysql_data:/var/lib/mysql
             
               app:
-                image: donghyunn/savit-server
+                image: donghyunn/savit-server:latest
                 container_name: savit-server
                 ports:
                   - "8080:8080"
@@ -149,12 +152,12 @@ jobs:
                   - redis
                   - mysql
                 volumes:
-                  - /home/ec2-user/app/config/application.properties:/tmp/application.properties:ro
+                  - /home/ec2-user/config/application.properties:/config/application.properties:ro
+                  - /home/ec2-user/firebase/savit-notification-firebase-adminsdk-fbsvc-d78f266db6.json:/firebase/savit-notification-firebase-adminsdk-fbsvc-d78f266db6.json:ro
                 environment:
                   - REDIS_HOST=redis
                   - REDIS_PORT=6379
-                command: >
-                  sh -c "cp /tmp/application.properties /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/application.properties && catalina.sh run"
+                  - FIREBASE_CONFIG_PATH=/firebase/savit-notification-firebase-adminsdk-fbsvc-d78f266db6.json
                 restart: unless-stopped
 
             volumes:
@@ -162,11 +165,8 @@ jobs:
               mysql_data:
             EOF
 
-            # 기존 컨테이너들 정리
-            sudo docker-compose down || true
-
             # 최신 이미지 다운로드
-            sudo docker pull donghyunn/savit-server
+            sudo docker pull donghyunn/savit-server:latest
 
             # Docker Compose로 서비스 시작
             sudo docker-compose up -d

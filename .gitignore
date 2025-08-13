@@ -19,7 +19,6 @@ build/
 *.pem
 
 # Firebase Service Account Keys
-src/main/resources/firebase/
 *firebase*.json
 *service-account*.json
 
