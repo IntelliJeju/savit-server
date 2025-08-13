@@ -14,4 +14,10 @@ public interface CardMapper {
     List<Card> selectCardsByUserId(Long userId);
     boolean existsCardByResCardNoAndUserId(@Param("resCardNo") String resCardNo, @Param("userId") Long userId);
     Card findFirstCardByUserId(@Param("userId") Long userId);
+    int updateCardName(@Param("cardId") Long cardId,
+                       @Param("userId") Long userId,
+                       @Param("cardName") String cardName);
+
+    Card selectCardBasicByIdAndUserId(@Param("cardId") Long cardId,
+                                      @Param("userId") Long userId);
 }
