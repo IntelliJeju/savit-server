@@ -2,6 +2,7 @@ package com.savit.card.controller;
 
 import com.savit.card.dto.CardDetailResponseDTO;
 import com.savit.card.dto.CardRegisterRequestDTO;
+import com.savit.card.dto.CardRenameRequestDTO;
 import com.savit.card.service.CardService;
 import com.savit.card.service.ClovaOCRService;
 import com.savit.security.JwtUtil;
@@ -119,4 +120,23 @@ public class CardController {
         }
     }
 
+    @PatchMapping("/{cardId}/name")
+    public ResponseEntity<?> renameCard(
+            @PathVariable Long cardId,
+            @RequestBody @Valid CardRenameRequestDTO req,
+            HttpServletRequest request
+    ) {
+        Long userId = jwtUtil.getUserIdFromToken(request);
+
+        var updated = cardService.renameCardAndFetch(cardId, userId, req.getCardName());
+        if (updated == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "not found"));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "cardId", updated.getId(),
+                "cardName", updated.getCardName(),
+                "updatedAt", updated.getUpdatedAt()
+        ));
+    }
 }

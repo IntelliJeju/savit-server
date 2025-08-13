@@ -39,6 +39,7 @@ public class SchedulerTestController {
     private final ChallengeDropoutScheduler challengeDropoutScheduler;
     private final DailyTopSpendingScheduler dailyTopSpendingScheduler;
     private final ChallengeStartNotificationScheduler challengeStartNotificationScheduler;
+    private final ChallengeSettlementScheduler challengeSettlementScheduler;
 
 
     /**
@@ -353,5 +354,28 @@ public class SchedulerTestController {
         }
     }
 
+    @PostMapping("/challenge-settlement")
+    public ResponseEntity<Map<String, Object>> testChallengeSettlement() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            log.info("=== 챌린지 정산 스케줄러 수동 테스트 시작 ===");
+
+            // settlement 스케줄러 직접 실행
+            challengeSettlementScheduler.runSettlementOnly();
+
+            response.put("status", "success");
+            response.put("message", "챌린지 정산 스케줄러 실행 완료");
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("챌린지 정산 스케줄러 테스트 실패", e);
+            response.put("status", "error");
+            response.put("message", "실행 실패: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
 
 }

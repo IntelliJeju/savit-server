@@ -51,4 +51,15 @@ public class SchedulerConfig {
         
         return executor;
     }
+
+    @Bean
+    public org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler taskScheduler() {
+        var ts = new org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler();
+        ts.setPoolSize(4);
+        ts.setThreadNamePrefix("sched-");
+        ts.setWaitForTasksToCompleteOnShutdown(true);
+        ts.setAwaitTerminationSeconds(30);
+        return ts;
+    }
+
 }

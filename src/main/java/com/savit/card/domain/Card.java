@@ -24,5 +24,6 @@ public class Card {
     private String resSleepYn;
     private String resImageLink;
     private LocalDateTime registeredAt;
+    private LocalDateTime updatedAt;
     private Long userId;
 }

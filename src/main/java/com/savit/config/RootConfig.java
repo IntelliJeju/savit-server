@@ -16,10 +16,13 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
-
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 
 @Configuration
+@EnableScheduling
+@EnableTransactionManagement
 @PropertySource("classpath:/application.properties")
 @MapperScan(basePackages = "com.savit.**.mapper")
 @ComponentScan(basePackages = "com.savit")

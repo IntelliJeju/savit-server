@@ -1,6 +1,8 @@
 package com.savit.user.controller;
 
+import com.savit.security.JwtUtil;
 import com.savit.user.domain.User;
+import com.savit.user.dto.UserInfoDTO;
 import com.savit.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,17 +14,19 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
     @GetMapping("/profile")
-    public ResponseEntity<User> getUserProfile(HttpServletRequest request) {
-        // JWT 토큰에서 사용자 ID 추출하여 사용자 정보 조회
-        // 실제 구현에서는 JWT 필터에서 사용자 정보를 추출해야 함
-        return ResponseEntity.ok().build();
+    public ResponseEntity<UserInfoDTO>getUserProfile(HttpServletRequest request) {
+        Long userId = jwtUtil.getUserIdFromToken(request);
+        User user = userService.findById(userId);
+        UserInfoDTO userDto = UserInfoDTO.from(user);
+        return ResponseEntity.ok(userDto);
     }
 }
