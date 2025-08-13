@@ -135,6 +135,36 @@ public class OpenAIController {
     }
     
     /**
+     * 저장된 하루 마무리 답변 조회
+     */
+    @GetMapping("/daily-wrapup-answers")
+    public ResponseEntity<Map<String, Object>> getDailyWrapUpAnswers() {
+        try {
+            List<String> answers = openAIInternalService.getDailyWrapUpAnswers();
+            List<String> prompts = openAIInternalService.getDailyWrapUpPrompts();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("totalCount", answers.size());
+            response.put("prompts", prompts);
+            response.put("answers", answers);
+            response.put("serviceEnabled", openAIInternalService.isServiceEnabled());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("하루 마무리 답변 조회 중 오류 발생", e);
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "하루 마무리 답변 조회 중 오류가 발생했습니다.");
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorResponse);
+        }
+    }
+
+    /**
      * OpenAI 서비스 상태 조회
      */
     @GetMapping("/status")
@@ -142,7 +172,9 @@ public class OpenAIController {
         Map<String, Object> response = new HashMap<>();
         response.put("serviceEnabled", openAIInternalService.isServiceEnabled());
         response.put("answerCount", openAIInternalService.getAnswerCount());
+        response.put("wrapUpAnswerCount", openAIInternalService.getDailyWrapUpAnswers().size());
         response.put("promptCount", openAIInternalService.getPredefinedPrompts().size());
+        response.put("wrapUpPromptCount", openAIInternalService.getDailyWrapUpPrompts().size());
         
         return ResponseEntity.ok(response);
     }
