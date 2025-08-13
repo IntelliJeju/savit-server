@@ -162,6 +162,33 @@ public class SchedulerTestController {
     }
 
     /**
+     * OpenAI 기반 하루 마무리 알림 스케줄러 수동 실행
+     */
+    @PostMapping("/daily-wrapup")
+    public ResponseEntity<Map<String, Object>> testDailyWrapUpScheduler() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            log.info("=== OpenAI 기반 하루 마무리 알림 스케줄러 수동 테스트 시작 ===");
+
+            // 테스트용 스케줄러 수동 실행
+            randomNaggingScheduler.sendDailyWrapUpNotificationsForTest();
+
+            response.put("status", "success");
+            response.put("message", "OpenAI 기반 하루 마무리 알림 스케줄러 실행 완료");
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("하루 마무리 알림 스케줄러 테스트 실패", e);
+            response.put("status", "error");
+            response.put("message", "실행 실패: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
      * 스케줄러 대상 사용자 목록 조회
      */
     @GetMapping("/users")

@@ -68,6 +68,49 @@ public class RandomNaggingScheduler {
     }
 
     /**
+     * 테스트용 - OpenAI 기반 하루 마무리 알림 (테스트 완료로 비활성화)
+     * 서버 시작 1분 후에 딱 한번만 실행되는 테스트용 스케줄러
+     */
+//     @Scheduled(initialDelay = 60000, fixedDelay = Long.MAX_VALUE) // 테스트 완료로 비활성화
+    public void sendDailyWrapUpNotificationsForTest() {
+        log.info("===== 테스트용 OpenAI 기반 하루 마무리 알림 스케줄러 시작 (딱 한번만 실행) =====");
+
+        try {
+            // 1. FCM 토큰이 등록된 활성 사용자 목록 조회
+            List<User> activeUsers = userMapper.findUsersWithFcmTokens();
+
+            if (activeUsers.isEmpty()) {
+                log.info("FCM 토큰이 등록된 사용자가 없습니다.");
+                return;
+            }
+
+            log.info("테스트용 하루 마무리 알림 대상 사용자: {}명", activeUsers.size());
+
+            // 2. 각 사용자별로 100% 확률로 하루 마무리 알림 발송 (테스트용)
+            int sentCount = 0;
+            for (User user : activeUsers) {
+                try {
+                    // 100% 확률로 하루 마무리 알림 발송 (테스트용)
+                    notificationService.sendDailyWrapUpNotification(user.getId());
+                    sentCount++;
+
+                    // 알림 발송 간격 조절 (300ms 대기)
+                    Thread.sleep(300);
+
+                } catch (Exception e) {
+                    log.error("사용자 {} 테스트용 하루 마무리 알림 발송 실패", user.getId(), e);
+                }
+            }
+
+            log.info("===== 테스트용 하루 마무리 알림 스케줄러 완료 - 대상: {}명, 발송: {}명 (딱 한번 실행 완료) =====",
+                    activeUsers.size(), sentCount);
+
+        } catch (Exception e) {
+            log.error("테스트용 하루 마무리 알림 스케줄러 실행 중 오류 발생", e);
+        }
+    }
+
+    /**
      * 운영용 실제 메서드
      * 내부 메서드 호출 방식 - 랜덤 잔소리 알림 (4시간마다)
      * 오전 8시부터 다음날 00시까지 4시간 간격으로 총 4번 실행
@@ -115,12 +158,13 @@ public class RandomNaggingScheduler {
     }
 
     /**
-     * 내부 메서드 호출 방식 - 랜덤 하루 마무리 알림 (매일 오후 9시)
-     * 하루를 마무리하는 시간에 푸시 발송
+     * 운영용 실제 메서드
+     * OpenAI API 기반 하루 마무리 알림 (매일 오후 9시)
+     * 하루를 마무리하는 시간에 OpenAI로 생성된 메시지 또는 기본 메시지로 푸시 발송
      */
     @Scheduled(cron = "0 0 21 * * *") // 매일 오후 9시
     public void sendDailyWrapUpNagging() {
-        log.info("===== 하루 마무리 알림 시작 =====");
+        log.info("===== OpenAI 기반 하루 마무리 알림 시작 =====");
 
         try {
             List<User> activeUsers = userMapper.findUsersWithFcmTokens();
@@ -130,34 +174,24 @@ public class RandomNaggingScheduler {
                 return;
             }
 
-            String[] wrapUpMessages = {
-                "오늘 하루 신용카드는 덜 썼죠? 📝",
-                "내일을 위해 오늘의 지출을 돌아봐요! 💭",
-                "오늘 하루도 고생했어요! 내일도 신용카드 덜쓰기! ✅",
-                "오늘 얼마나 썼는지 체크해볼까요? 💰"
-            };
-
             int sentCount = 0;
             for (User user : activeUsers) {
                 try {
-                    // 30% 확률로 하루 마무리 메시지 발송
-                    if (random.nextInt(100) < 30) {
-                        String message = wrapUpMessages[random.nextInt(wrapUpMessages.length)];
-                        notificationService.sendNotificationToUser(user.getId(), "💬 Savit 한마디", message);
-                        sentCount++;
-
-                        Thread.sleep(300);
-                    }
+                    // OpenAI API 기반 하루 마무리 알림 발송
+                    notificationService.sendDailyWrapUpNotification(user.getId());
+                    sentCount++;
+                    // 알림 발송 간격 조절 (500ms 대기)
+                    Thread.sleep(500);
                 } catch (Exception e) {
                     log.error("사용자 {} 하루 마무리 알림 발송 실패", user.getId(), e);
                 }
             }
 
-            log.info("===== 하루 마무리 잔소리 알림 완료 - 대상: {}명, 발송: {}명 =====",
+            log.info("===== OpenAI 기반 하루 마무리 알림 완료 - 대상: {}명, 발송: {}명 =====",
                     activeUsers.size(), sentCount);
 
         } catch (Exception e) {
-            log.error("하루 마무리 잔소리 알림 실행 중 오류 발생", e);
+            log.error("OpenAI 기반 하루 마무리 알림 실행 중 오류 발생", e);
         }
     }
 }

@@ -32,15 +32,19 @@ public class OpenAIDailyScheduler {
             
             long startTime = System.currentTimeMillis();
             
-            // OpenAI 답변 생성 및 저장
+            // OpenAI 랜덤 잔소리 답변 생성 및 저장
             openAIInternalService.generateAndStoreDailyAnswers();
+            
+            // OpenAI 하루 마무리 답변 생성 및 저장
+            openAIInternalService.generateAndStoreDailyWrapUpAnswers();
             
             long endTime = System.currentTimeMillis();
             long duration = endTime - startTime;
             
             log.info("=== OpenAI 일일 답변 갱신 완료 ===");
             log.info("처리 시간: {}ms ({}초)", duration, duration / 1000.0);
-            log.info("생성된 답변 수: {}", openAIInternalService.getAnswerCount());
+            log.info("생성된 랜덤 잔소리 답변 수: {}", openAIInternalService.getAnswerCount());
+            log.info("생성된 하루 마무리 답변 수: {}", openAIInternalService.getDailyWrapUpAnswers().size());
             
         } catch (Exception e) {
             log.error("OpenAI 일일 답변 갱신 중 오류 발생", e);

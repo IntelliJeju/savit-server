@@ -207,6 +207,61 @@ public class NotificationService {
     }
     
     /**
+     * 하루 마무리 알림
+     */
+    public void sendDailyWrapUpNotification(Long userId) {
+        String wrapUpMessage = getDailyWrapUpMessage();
+        String title = "🌙 하루 마무리";
+        sendNotificationToUser(userId, title, wrapUpMessage);
+        log.info("하루 마무리 알림 전송 완료 - 사용자: {}, 메시지: {}", userId, wrapUpMessage);
+    }
+
+    /**
+     * OpenAI로 생성된 하루 마무리 메시지
+     * 또는 디폴트 메시지 전송
+     * @return aiMessage or defaultMessage
+     */
+    private String getDailyWrapUpMessage() {
+        try {
+            if(openAIInternalService.isServiceEnabled() && !openAIInternalService.getDailyWrapUpAnswers().isEmpty()) {
+                String aiResponse = openAIInternalService.getDailyWrapUpAnswers().get(0);
+                String[] aiMessages = aiResponse.split("\\n");  // 정규표현식에서 개행 문자 찾는 용도로 \\n 사용함
+                
+                // 유효한 메시지만 필터링
+                List<String> validMessages = new ArrayList<>();
+                for (String message : aiMessages) {
+                    String trimmed = message.trim();
+                    // 빈 문자열이 아니고, 10자 이상이고, 한글이 포함된 메시지만 선택
+                    if (!trimmed.isEmpty() && trimmed.length() > 10 && trimmed.matches(".*[가-힣].*")) {
+                        validMessages.add(trimmed);
+                    }
+                }
+                
+                if (!validMessages.isEmpty()) {
+                    String selectedMessage = validMessages.get((int) (Math.random() * validMessages.size()));
+                    log.debug("선택된 AI 하루 마무리 메시지: {}", selectedMessage);
+                    return selectedMessage;
+                } else {
+                    log.warn("유효한 AI 하루 마무리 메시지가 없음, 기본 메시지 사용");
+                }
+            }
+        } catch (Exception e) {
+            log.error("OpenAI 하루 마무리 메시지 사용 실패, 기본 메시지를 사용합니다", e);
+        }
+        
+        // 기본 하루 마무리 메시지
+        String[] defaultWrapUpMessages = {
+            "오늘 하루 신용카드는 덜 썼죠? 내일도 화이팅! 📝✨",
+            "내일을 위해 오늘의 지출을 돌아봐요! 좋은 꿈 꾸세요 💭🌙",
+            "오늘 하루도 고생했어요! 내일도 현명한 소비하기! ✅💪",
+            "오늘 얼마나 썼는지 체크해볼까요? 잘 자요~ 💰😴",
+            "오늘의 가계부 정리는 끝났나요? 내일도 파이팅! 📊🌟",
+            "작은 절약도 쌓이면 큰 돈이에요! 오늘도 수고했어요 💎💫"
+        };
+        return defaultWrapUpMessages[(int) (Math.random() * defaultWrapUpMessages.length)];
+    }
+    
+    /**
      * 챌린지 성공 알림 - 실제 운영용
      * 중복 알림 방지 로직 포함
      */
