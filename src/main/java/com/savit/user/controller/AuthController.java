@@ -77,7 +77,7 @@ public class AuthController {
             log.info("refreshToken = {}", loginResponse.getRefreshToken());
 
             // 성공 시 프론트엔드로 리다이렉트 (토큰 포함)
-            String redirectUrl = "http://localhost:8080/auth/login/callback" +
+            String redirectUrl = "http://localhost:5173/auth/login/callback" +
                     "?accessToken=" + URLEncoder.encode(loginResponse.getAccessToken(), "UTF-8") +
                     "&refreshToken=" + URLEncoder.encode(loginResponse.getRefreshToken(), "UTF-8");
 
