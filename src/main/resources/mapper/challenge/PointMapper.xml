@@ -1,0 +1,28 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savit.challenge.mapper.PointMapper">
+
+    <resultMap id="PointMap" type="com.savit.challenge.domain.PointVO">
+        <id     property="userId"   column="user_id"/>
+        <result property="amount"   column="amount"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="ensureRow">
+        INSERT INTO Point(user_id, amount, created_at, updated_at)
+        VALUES(#{userId}, 0, NOW(), NOW())
+            ON DUPLICATE KEY UPDATE user_id = user_id
+    </insert>
+
+    <update id="add">
+        UPDATE Point
+        SET amount = COALESCE(amount, 0) + #{delta},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <select id="getAmount" resultType="long">
+        SELECT COALESCE(amount, 0) FROM Point WHERE user_id = #{userId}
+    </select>
+</mapper>

@@ -74,12 +74,19 @@ public class ChallengeServiceImpl implements ChallengeService {
         // 4. 조건검사: 1/0
         int eligibility = checkEligibility(challengeVO, userId);
 
+        String startDateStr = challengeVO.getStartDate() != null
+                ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(challengeVO.getStartDate())
+                : null;
+        String endDateStr = challengeVO.getEndDate() != null
+                ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(challengeVO.getEndDate())
+                : null;
+
         // 5. 이제 response 타입인 challengeDetailDTO로 변환해주기
         return ChallengeDetailDTO.builder()
                 .title(challengeVO.getTitle())
                 .description(challengeVO.getDescription())
-                .startDate(challengeVO.getStartDate().toString())
-                .endDate(challengeVO.getEndDate().toString())
+                .startDate(startDateStr)
+                .endDate(endDateStr)
                 .entryFee(totalEntryFee)
                 .categoryName(categoryVO.getName())
                 .durationWeeks(challengeVO.getDurationWeeks())

@@ -52,5 +52,4 @@ public interface ChallengeMapper {
     // 상세조회
     ChallengeVO findById(Long challengeId);
 
-
 }
