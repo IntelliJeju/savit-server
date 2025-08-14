@@ -10,14 +10,13 @@ public class ChallengeVO {
     private Long id;
     private String title;
     private String description;
-    private String startDate;
-    private String endDate;
+    private Date startDate;
+    private Date endDate;
     private int targetCount;
     private BigDecimal targetAmount;
     private String type;
     private int durationWeeks;
     private Long categoryId;
-
     private Long totalParticipants;
     private Long joinedParticipants;
 }

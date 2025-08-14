@@ -1,13 +1,44 @@
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.savit.challenge.mapper.PaymentMapper">
 
-    <insert id="insertPayment">
-        INSERT INTO Payment (
-            merchant_uid, imp_uid, paid_at, amount, status, challenge_id, user_id
-        ) VALUES (
-                     #{merchantUid}, #{impUid}, #{paidAt}, #{amount}, #{status}, #{challengeId}, #{userId}
-                 )
+    <resultMap id="PaymentMap" type="com.savit.challenge.domain.PaymentVO">
+        <id     property="merchantUid" column="merchant_uid"/>
+        <result property="amount"      column="amount"/>
+        <result property="status"      column="status"/>
+        <result property="impUid"      column="imp_uid"/>
+        <result property="paidAt"      column="paid_at"/>
+        <result property="createdAt"   column="created_at"/>
+        <result property="challengeId" column="challenge_id"/>
+        <result property="userId"      column="user_id"/>
+    </resultMap>
+
+    <insert id="insertPending">
+        INSERT INTO Payment(merchant_uid, user_id, challenge_id, amount, status)
+        VALUES(#{merchantUid}, #{userId}, #{challengeId}, #{amount}, 'PENDING')
+            ON DUPLICATE KEY UPDATE merchant_uid = merchant_uid
     </insert>
+
+    <select id="findByMerchantUid" resultMap="PaymentMap">
+        SELECT *
+        FROM Payment
+        WHERE merchant_uid = #{merchantUid}
+    </select>
+
+    <select id="findByMerchantUidForUpdate" resultMap="PaymentMap">
+        SELECT *
+        FROM Payment
+        WHERE merchant_uid = #{merchantUid}
+            FOR UPDATE
+    </select>
+
+    <update id="markSuccess">
+        UPDATE Payment
+        SET status  = 'SUCCESS',
+            imp_uid = #{impUid},
+            paid_at = #{paidAt}
+        WHERE merchant_uid = #{merchantUid}
+          AND status = 'PENDING'
+    </update>
 
 </mapper>

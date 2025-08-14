@@ -88,8 +88,9 @@
         ORDER BY CAST(t.res_used_amount AS DECIMAL(12,2)) DESC
         LIMIT 1
     </select>
+
     <select id="findTransactionBetweenTime" resultType="com.savit.card.domain.CardTransactionVO">
-        select
+        SELECT
             ct.id,
             ct.card_id,
             ct.res_card_no,
@@ -105,46 +106,38 @@
             ct.res_member_store_type,
             ct.created_at,
             ct.updated_at
-        from CardTransaction ct
-        where  ct.created_at &gt;= #{startTime}
-                and ct.created_at &lt; #{endTime}
-                and ct.res_cancel_yn != 'Y'
-                and ct.category_id is not null
-        order by ct.created_at asc
+        FROM CardTransaction ct
+        WHERE ct.created_at &gt;= STR_TO_DATE(#{startTime}, '%Y-%m-%dT%H:%i:%s')
+          AND ct.created_at &lt;  STR_TO_DATE(#{endTime}, '%Y-%m-%dT%H:%i:%s')
+          AND (ct.res_cancel_yn IS NULL OR ct.res_cancel_yn != 'Y')
+          AND ct.category_id IS NOT NULL
+        ORDER BY ct.created_at ASC
     </select>
-    <select id="findTransactionAfterTime" resultType="com.savit.card.domain.CardTransactionVO">
-        select ct.id,
-               ct.card_id,
-               ct.res_card_no,
-               ct.res_used_date,
-               ct.res_used_time,
-               ct.res_used_amount,
-               ct.res_cancel_yn,
-               ct.res_cancel_amount,
-               ct.res_total_amount,
-               ct.budget_category_id,
-               ct.category_id,
-               ct.res_member_store_name,
-               ct.res_member_store_type,
-               ct.created_at,
-               ct.updated_at
-        from CardTransaction ct
-        where ct.created_at &gt;= #{lastProcessedTime}
-          and ct.res_cancel_yn != 'Y'
-  and ct.category_id is not null
-        order by ct.created_at asc
 
+    <select id="findTransactionAfterTime" resultType="com.savit.card.domain.CardTransactionVO">
+        SELECT
+            ct.id,
+            ct.card_id,
+            ct.res_card_no,
+            ct.res_used_date,
+            ct.res_used_time,
+            ct.res_used_amount,
+            ct.res_cancel_yn,
+            ct.res_cancel_amount,
+            ct.res_total_amount,
+            ct.budget_category_id,
+            ct.category_id,
+            ct.res_member_store_name,
+            ct.res_member_store_type,
+            ct.created_at,
+            ct.updated_at
+        FROM CardTransaction ct
+        WHERE ct.created_at &gt;= STR_TO_DATE(#{lastProcessedTime}, '%Y-%m-%dT%H:%i:%s')
+          AND (ct.res_cancel_yn IS NULL OR ct.res_cancel_yn != 'Y')
+          AND ct.category_id IS NOT NULL
+        ORDER BY ct.created_at ASC
     </select>
-    <select id="sumAmountByCategoryAndPeriod" resultType="java.math.BigDecimal">
-        select coalesce(sum(cast(ct.res_used_amount as decimal(12, 2))), 0)
-        from CardTransaction as ct
-                 inner join Card as c on ct.card_id = c.id
-        where c.user_id = #{userId}
-          and ct.category_id = #{categoryId}
-          and ct.res_used_date &gt;= #{startDate}
-        and ct.res_used_date &lt;= #{endDate}
-        and ct.res_cancel_yn !='Y'
-    </select>
+
     <select id="countByCategoryAndPeriod" resultType="java.lang.Long">
         select count(*)
         from CardTransaction as ct
