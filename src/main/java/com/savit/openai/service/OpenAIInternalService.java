@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.savit.config.OpenAIConfig;
 import com.savit.openai.dto.OpenAIRequestDTO;
 import com.savit.openai.dto.OpenAIResponseDTO;
+import com.savit.openai.dto.NaggingMessageResponseDTO;
+import com.savit.openai.dto.WrapUpMessageResponseDTO;
 import lombok.RequiredArgsConstructor;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -151,7 +153,7 @@ public class OpenAIInternalService {
     }
     
     /**
-     * OpenAI API 호출
+     * OpenAI API 호출 (기존 방식)
      */
     private String callOpenAIAPI(String prompt) throws IOException {
         OpenAIRequestDTO requestDTO = OpenAIRequestDTO.createSingleMessage(
@@ -193,6 +195,158 @@ public class OpenAIInternalService {
             }
             
             return responseDTO.getChoices().get(0).getMessage().getContent();
+        }
+    }
+    
+    /**
+     * Structured Outputs API 호출 - 잔소리 메시지용
+     */
+    private NaggingMessageResponseDTO callStructuredNaggingAPI() throws IOException {
+        OpenAIRequestDTO requestDTO = OpenAIRequestDTO.createNaggingMessageRequest(
+                openAIConfig.getModel(),
+                openAIConfig.getMaxTokens(),
+                openAIConfig.getTemperature()
+        );
+        
+        return callStructuredOutputAPI(requestDTO, NaggingMessageResponseDTO.class);
+    }
+    
+    /**
+     * Structured Outputs API 호출 - 하루 마무리 메시지용
+     */
+    private WrapUpMessageResponseDTO callStructuredWrapUpAPI() throws IOException {
+        OpenAIRequestDTO requestDTO = OpenAIRequestDTO.createWrapUpMessageRequest(
+                openAIConfig.getModel(),
+                openAIConfig.getMaxTokens(),
+                openAIConfig.getTemperature()
+        );
+        
+        return callStructuredOutputAPI(requestDTO, WrapUpMessageResponseDTO.class);
+    }
+    
+    /**
+     * Structured Outputs API 호출 (공통 메서드)
+     */
+    private <T> T callStructuredOutputAPI(OpenAIRequestDTO requestDTO, Class<T> responseClass) throws IOException {
+        String jsonBody = objectMapper.writeValueAsString(requestDTO);
+        log.debug("Structured Outputs 요청: {}", jsonBody);
+        
+        RequestBody body = RequestBody.create(
+                jsonBody, 
+                MediaType.get("application/json; charset=utf-8")
+        );
+        
+        Request request = new Request.Builder()
+                .url(openAIConfig.getApiUrl())
+                .addHeader("Authorization", "Bearer " + openAIConfig.getApiKey())
+                .addHeader("Content-Type", "application/json")
+                .post(body)
+                .build();
+        
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                String errorBody = response.body() != null ? response.body().string() : "Unknown error";
+                log.error("Structured Outputs API 호출 실패: HTTP {} - {}", response.code(), errorBody);
+                return null;
+            }
+            
+            String responseBody = response.body().string();
+            log.debug("Structured Outputs API 응답: {}", responseBody);
+            
+            OpenAIResponseDTO responseDTO = objectMapper.readValue(responseBody, OpenAIResponseDTO.class);
+            
+            if (responseDTO.getChoices() == null || responseDTO.getChoices().isEmpty()) {
+                log.error("Structured Outputs API 응답에 choices가 없습니다.");
+                return null;
+            }
+            
+            String content = responseDTO.getChoices().get(0).getMessage().getContent();
+            log.debug("구조화된 응답 내용: {}", content);
+            
+            // JSON 문자열을 지정된 클래스로 파싱
+            return objectMapper.readValue(content, responseClass);
+        }
+    }
+    
+    /**
+     * Structured Outputs로 잔소리 메시지 생성 및 저장
+     */
+    public void generateAndStoreStructuredNaggingMessages() {
+        if (!openAIConfig.isEnabled()) {
+            log.warn("OpenAI 기능이 비활성화되어 있습니다.");
+            return;
+        }
+        
+        log.info("Structured Outputs 잔소리 메시지 생성을 시작합니다.");
+        
+        try {
+            NaggingMessageResponseDTO response = callStructuredNaggingAPI();
+            
+            if (response != null && response.getMessages() != null && !response.getMessages().isEmpty()) {
+                // 기존 답변 리스트 초기화 후 새로운 메시지들로 업데이트
+                dailyAnswers.clear();
+                
+                // Structured 응답의 메시지들을 문자열로 변환하여 저장
+                StringBuilder structuredMessages = new StringBuilder();
+                for (String message : response.getMessages()) {
+                    structuredMessages.append(message).append("\n");
+                }
+                dailyAnswers.add(structuredMessages.toString().trim());
+                
+                log.info("Structured Outputs 잔소리 메시지 생성 완료 - 생성된 메시지: {}개, 타입: {}, 톤: {}", 
+                         response.getMessages().size(), response.getType(), response.getTone());
+                
+            } else {
+                log.warn("Structured Outputs 잔소리 메시지 생성 실패: 빈 응답");
+                dailyAnswers.clear();
+                dailyAnswers.add("💰 오늘도 가계부 확인 잊지 마세요!\n📝 지출 기록은 습관이 되어야 해요!");
+            }
+            
+        } catch (Exception e) {
+            log.error("Structured Outputs 잔소리 메시지 생성 중 오류 발생", e);
+            dailyAnswers.clear();
+            dailyAnswers.add("💸 카드 사용할 때마다 가계부 체크!\n🎯 예산 관리가 성공의 열쇠예요!");
+        }
+    }
+    
+    /**
+     * Structured Outputs로 하루 마무리 메시지 생성 및 저장
+     */
+    public void generateAndStoreStructuredWrapUpMessages() {
+        if (!openAIConfig.isEnabled()) {
+            log.warn("OpenAI 기능이 비활성화되어 있습니다.");
+            return;
+        }
+        
+        log.info("Structured Outputs 하루 마무리 메시지 생성을 시작합니다.");
+        
+        try {
+            WrapUpMessageResponseDTO response = callStructuredWrapUpAPI();
+            
+            if (response != null && response.getMessages() != null && !response.getMessages().isEmpty()) {
+                // 기존 답변 리스트 초기화 후 새로운 메시지들로 업데이트
+                dailyWrapUpAnswers.clear();
+                
+                // Structured 응답의 메시지들을 문자열로 변환하여 저장
+                StringBuilder structuredMessages = new StringBuilder();
+                for (String message : response.getMessages()) {
+                    structuredMessages.append(message).append("\n");
+                }
+                dailyWrapUpAnswers.add(structuredMessages.toString().trim());
+                
+                log.info("Structured Outputs 하루 마무리 메시지 생성 완료 - 생성된 메시지: {}개, 타입: {}, 톤: {}", 
+                         response.getMessages().size(), response.getType(), response.getTone());
+                
+            } else {
+                log.warn("Structured Outputs 하루 마무리 메시지 생성 실패: 빈 응답");
+                dailyWrapUpAnswers.clear();
+                dailyWrapUpAnswers.add("🌙 오늘 하루도 수고하셨어요!\n💪 내일도 현명한 소비 습관 만들어가요!");
+            }
+            
+        } catch (Exception e) {
+            log.error("Structured Outputs 하루 마무리 메시지 생성 중 오류 발생", e);
+            dailyWrapUpAnswers.clear();
+            dailyWrapUpAnswers.add("✨ 오늘의 지출을 돌아보는 시간!\n🎯 내일은 더 나은 소비를 위해 화이팅!");
         }
     }
     
@@ -247,6 +401,30 @@ public class OpenAIInternalService {
         } catch (Exception e) {
             log.error("단일 프롬프트 테스트 중 오류", e);
             return "테스트 중 오류 발생: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Structured Outputs 잔소리 메시지 테스트용 메서드
+     */
+    public NaggingMessageResponseDTO testStructuredNaggingMessage() {
+        try {
+            return callStructuredNaggingAPI();
+        } catch (Exception e) {
+            log.error("Structured Outputs 잔소리 메시지 테스트 중 오류", e);
+            return null;
+        }
+    }
+    
+    /**
+     * Structured Outputs 하루 마무리 메시지 테스트용 메서드
+     */
+    public WrapUpMessageResponseDTO testStructuredWrapUpMessage() {
+        try {
+            return callStructuredWrapUpAPI();
+        } catch (Exception e) {
+            log.error("Structured Outputs 하루 마무리 메시지 테스트 중 오류", e);
+            return null;
         }
     }
 }
