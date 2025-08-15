@@ -13,4 +13,12 @@
         SELECT * FROM Category WHERE name = #{name}
     </select>
 
+    <select id="findPeerAvgByAgeGroupAndCategoryId" resultType="int">
+        SELECT p.avg_amount_month
+        FROM PeerAgeGroupAvg p
+        WHERE p.age_group = #{ageGroup}
+          AND p.category_id = #{categoryId}
+            LIMIT 1
+    </select>
+
 </mapper>
