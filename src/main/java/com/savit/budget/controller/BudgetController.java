@@ -82,11 +82,11 @@ public class BudgetController {
 
     // 사용자 + categoryId 기준 또래 월평균 금액(없으면 0)
     @GetMapping("/peer-avg/{categoryId}")
-    public ResponseEntity<Integer> getMyPeerAvgByCategoryId(@PathVariable Long categoryId,
+    public ResponseEntity<Map<String, Integer>> getMyPeerAvgByCategoryId(@PathVariable Long categoryId,
                                                             HttpServletRequest request) {
         Long userId = jwtUtil.getUserIdFromToken(request);
         int amount = budgetService.getPeerAvgForUserAndCategory(userId, categoryId);
-        return ResponseEntity.ok(amount); // 없으면 0
+        return ResponseEntity.ok(Map.of("amount", amount)); // 없으면 0
     }
 }
 
