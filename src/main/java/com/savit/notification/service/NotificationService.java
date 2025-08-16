@@ -26,6 +26,7 @@ public class NotificationService {
     private final NotificationMapper notificationMapper;
     private final OpenAIInternalService openAIInternalService;
     private final ChallengeNotificationHistoryMapper challengeNotificationHistoryMapper;
+    private static final String SAVIT_LOGO_ICON = "/assets/img/savit-logo.png";
 
     public String sendNotification(PushNotificationRequest request) {
         return sendNotification(request, null);
@@ -43,17 +44,18 @@ public class NotificationService {
                 .setImage(request.getImage())
                 .build();
 
+
+        //중복 푸시알림 문제 해결위한 코드 : Notification 사용 안하고 putData() 로 데이터 페이로드에 담아 프론트에 전달함
         Message message = Message.builder()
                 .setToken(request.getToken())
-                .setNotification(notification)
-                .putAllData(request.getData() != null ? request.getData() : java.util.Collections.emptyMap())
                 .setWebpushConfig(WebpushConfig.builder()
-                        .setNotification(WebpushNotification.builder()
-                                .setTitle(request.getTitle())
-                                .setBody(request.getBody())
-                                .setIcon("/icon-192x192.png")
-                                .build())
+                        .putHeader("Urgency", "high")
                         .build())
+                .putData("title", request.getTitle())
+                .putData("body", request.getBody())
+                .putData("icon", SAVIT_LOGO_ICON)
+                .putAllData(request.getData() != null ?
+                        request.getData() : java.util.Collections.emptyMap())
                 .build();
 
         try {
@@ -177,12 +179,6 @@ public class NotificationService {
                 for (String message : aiMessages) {
                     String trimmed = message.trim();
                     
-                    // 메타데이터 키워드 제외
-                    if (isMetadataKeyword(trimmed)) {
-                        log.debug("잔소리 메타데이터 제외: {}", trimmed);
-                        continue;
-                    }
-                    
                     // 빈 문자열이 아니고, 10자 이상이고, 한글이 포함된 메시지만 선택
                     if (!trimmed.isEmpty() && trimmed.length() > 10 && trimmed.matches(".*[가-힣].*")) {
                         validMessages.add(trimmed);
@@ -251,12 +247,6 @@ public class NotificationService {
                     
                     log.debug("메시지 {}: '{}' (길이: {})", i, trimmed, trimmed.length());
                     
-                    // 메타데이터 키워드 제외
-                    if (isMetadataKeyword(trimmed)) {
-                        log.info("하루 마무리 메타데이터 제외: {}", trimmed);
-                        continue;
-                    }
-                    
                     // 빈 문자열이 아니고, 10자 이상이고, 한글이 포함된 메시지만 선택
                     if (!trimmed.isEmpty() && trimmed.length() > 10 && trimmed.matches(".*[가-힣].*")) {
                         validMessages.add(trimmed);
@@ -299,51 +289,7 @@ public class NotificationService {
         return defaultWrapUpMessages[(int) (Math.random() * defaultWrapUpMessages.length)];
     }
     
-    /**
-     * 메타데이터 키워드 판별 (Structured Outputs 파싱 개선)
-     * 필요 없는 키워드 다 빼버리기
-     * @param text 검사할 텍스트
-     * @return 메타데이터인지 여부
-     */
-    private boolean isMetadataKeyword(String text) {
-        if (text == null || text.isEmpty()) {
-            return true;
-        }
-        
-        // 정확한 메타데이터 키워드들만
-        String[] exactMatches = {
-            "generatedDate", "generated_date", "type", "tone", 
-            "nagging", "daily_wrap_up", "friendly", "strict", "humorous",
-            "encouraging", "reflective", "motivational",
-            // 하루 마무리 전용 메타데이터 패턴들 추가 완료
-            "end-of-day", "end_of_day", "financial", "habits", 
-            "spending", "budget", "goals", "reflection",
-            "young", "professionals", "messages"
-        };
-        
-        // 정확한 매치만 확인
-        for (String match : exactMatches) {
-            if (text.equals(match)) {
-                log.debug("정확한 메타데이터 매치: {}", text);
-                return true;
-            }
-        }
-        
-        // 날짜 패턴 확인
-        if (text.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
-            log.debug("날짜 패턴 매치: {}", text);
-            return true;
-        }
-        
-        // 매우 짧은 영문 키워드만 (3자 이하)
-        if (text.length() <= 3 && text.matches("^[a-zA-Z_]+$")) {
-            log.debug("짧은 영문 키워드: {}", text);
-            return true;
-        }
-        
-        return false;
-    }
-    
+
     /**
      * 챌린지 성공 알림 - 실제 운영용
      * 중복 알림 방지 로직 포함

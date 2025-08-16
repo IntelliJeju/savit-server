@@ -21,22 +21,8 @@ public class NaggingMessageResponseDTO {
     
     /**
      * 생성된 잔소리 메시지 리스트
-     * 10개의 다양한 잔소리 메시지
+     * 5개의 다양한 잔소리 메시지
      */
     private List<String> messages;
-    
-    /**
-     * 메시지 생성 날짜 (YYYY-MM-DD 형식)
-     */
-    private String generatedDate;
-    
-    /**
-     * 메시지 타입 (항상 "nagging")
-     */
-    private String type;
-    
-    /**
-     * 메시지 톤 (예: "friendly", "strict", "humorous")
-     */
-    private String tone;
+
 }

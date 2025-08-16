@@ -206,9 +206,6 @@ public class OpenAIController {
                 response.put("message", "Structured Outputs 테스트 성공");
                 response.put("structuredResponse", structuredResponse);
                 response.put("messageCount", structuredResponse.getMessages() != null ? structuredResponse.getMessages().size() : 0);
-                response.put("generatedDate", structuredResponse.getGeneratedDate());
-                response.put("type", structuredResponse.getType());
-                response.put("tone", structuredResponse.getTone());
                 response.put("messages", structuredResponse.getMessages());
             } else {
                 response.put("success", false);
@@ -255,9 +252,6 @@ public class OpenAIController {
                 response.put("message", "Structured Outputs 테스트 성공");
                 response.put("structuredResponse", structuredResponse);
                 response.put("messageCount", structuredResponse.getMessages() != null ? structuredResponse.getMessages().size() : 0);
-                response.put("generatedDate", structuredResponse.getGeneratedDate());
-                response.put("type", structuredResponse.getType());
-                response.put("tone", structuredResponse.getTone());
                 response.put("messages", structuredResponse.getMessages());
             } else {
                 response.put("success", false);
