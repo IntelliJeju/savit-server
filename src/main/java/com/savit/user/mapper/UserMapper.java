@@ -3,6 +3,7 @@ package com.savit.user.mapper;
 
 import com.savit.user.domain.User;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -13,6 +14,8 @@ public interface UserMapper {
     void insertUser(User user);
     void updateUser(User user);
     User findById(Long id);
+    int updateBirthDateIfNull(@Param("userId") Long userId,
+                              @Param("birthDate") String birthDate);
     
     // ===== 내부 메서드 호출 방식 - 스케줄러에서 사용 =====
     

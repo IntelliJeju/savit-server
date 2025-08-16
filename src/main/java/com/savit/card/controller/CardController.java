@@ -65,12 +65,13 @@ public class CardController {
             }
             Long userId = jwtUtil.getUserIdFromToken(request);
 
-            User user = userService.findById(userId);
-            user.setBirthDate(req.getBirthDate());
-            userService.updateUser(user);
-
             String connectedId =
                     cardService.registerAccount(req);
+
+            String birthForDb = toYyyyDashMmDashDd(birthDate);
+            if (birthForDb != null && !birthForDb.isBlank()) {
+                userService.updateBirthDateIfNull(userId, birthForDb);
+            }
 
             List<Map<String,Object>> cards =
                     cardService.fetchCardList(
@@ -138,5 +139,15 @@ public class CardController {
                 "cardName", updated.getCardName(),
                 "updatedAt", updated.getUpdatedAt()
         ));
+    }
+
+    private String toYyyyDashMmDashDd(String raw) {
+        if (raw == null) return null;
+        String s = raw.trim();
+        if (s.matches("\\d{8}")) {
+            return s.substring(0,4) + "-" + s.substring(4,6) + "-" + s.substring(6,8);
+        }
+        if (s.matches("\\d{4}-\\d{2}-\\d{2}")) return s;
+        return s;
     }
 }
