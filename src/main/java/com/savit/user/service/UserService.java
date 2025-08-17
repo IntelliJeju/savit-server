@@ -8,4 +8,5 @@ public interface UserService {
     void createUser(User user);
     void updateUser(User user);
     User findById(Long id);
+    void updateBirthDateIfNull(Long userId, String birthDate);
 }

@@ -37,4 +37,9 @@ public class UserServiceImpl implements UserService {
     public User findById(Long id) {
         return userMapper.findById(id);
     }
+
+    @Override
+    public void updateBirthDateIfNull(Long userId, String birthDate) {
+        userMapper.updateBirthDateIfNull(userId, birthDate);
+    }
 }

@@ -37,6 +37,13 @@
         VALUES (#{email}, #{nickname}, #{profileImage}, #{createdAt}, #{updatedAt}, #{kakaoUserId}, #{connectedId}, #{refreshToken}, #{birthDate})
     </insert>
 
+    <update id="updateBirthDateIfNull">
+        UPDATE User
+        SET birth_date = #{birthDate}
+        WHERE id = #{userId}
+          AND (birth_date IS NULL OR birth_date = '')
+    </update>
+
     <!-- 사용자 정보 업데이트 -->
     <update id="updateUser" parameterType="com.savit.user.domain.User">
         UPDATE User
