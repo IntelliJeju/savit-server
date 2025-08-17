@@ -57,27 +57,12 @@ public class ResponseFormat {
                     "messages", java.util.Map.of(
                         "type", "array",
                         "items", java.util.Map.of("type", "string"),
-                        "minItems", 10,
-                        "maxItems", 10,
-                        "description", "10개의 다양한 잔소리 메시지"
-                    ),
-                    "generatedDate", java.util.Map.of(
-                        "type", "string",
-                        "pattern", "^\\d{4}-\\d{2}-\\d{2}$",
-                        "description", "메시지 생성 날짜 (YYYY-MM-DD 형식)"
-                    ),
-                    "type", java.util.Map.of(
-                        "type", "string",
-                        "enum", java.util.List.of("nagging"),
-                        "description", "메시지 타입"
-                    ),
-                    "tone", java.util.Map.of(
-                        "type", "string",
-                        "enum", java.util.List.of("friendly", "strict", "humorous"),
-                        "description", "메시지 톤"
+                        "minItems", 5,
+                        "maxItems", 5,
+                        "description", "5개의 다양한 잔소리 메시지"
                     )
                 ))
-                .required(new String[]{"messages", "generatedDate", "type", "tone"})
+                .required(new String[]{"messages"})
                 .additionalProperties(false)
                 .build();
         
@@ -98,27 +83,12 @@ public class ResponseFormat {
                     "messages", java.util.Map.of(
                         "type", "array",
                         "items", java.util.Map.of("type", "string"),
-                        "minItems", 10,
-                        "maxItems", 10,
-                        "description", "10개의 다양한 하루 마무리 메시지"
-                    ),
-                    "generatedDate", java.util.Map.of(
-                        "type", "string",
-                        "pattern", "^\\d{4}-\\d{2}-\\d{2}$",
-                        "description", "메시지 생성 날짜 (YYYY-MM-DD 형식)"
-                    ),
-                    "type", java.util.Map.of(
-                        "type", "string",
-                        "enum", java.util.List.of("daily_wrap_up"),
-                        "description", "메시지 타입"
-                    ),
-                    "tone", java.util.Map.of(
-                        "type", "string",
-                        "enum", java.util.List.of("encouraging", "reflective", "motivational"),
-                        "description", "메시지 톤"
+                        "minItems", 5,
+                        "maxItems", 5,
+                        "description", "5개의 다양한 하루 마무리 메시지"
                     )
                 ))
-                .required(new String[]{"messages", "generatedDate", "type", "tone"})
+                .required(new String[]{"messages"})
                 .additionalProperties(false)
                 .build();
         

@@ -293,8 +293,8 @@ public class OpenAIInternalService {
                 }
                 dailyAnswers.add(structuredMessages.toString().trim());
                 
-                log.info("Structured Outputs 잔소리 메시지 생성 완료 - 생성된 메시지: {}개, 타입: {}, 톤: {}", 
-                         response.getMessages().size(), response.getType(), response.getTone());
+                log.info("Structured Outputs 잔소리 메시지 생성 완료 - 생성된 메시지: {}개",
+                         response.getMessages().size());
                 
             } else {
                 log.warn("Structured Outputs 잔소리 메시지 생성 실패: 빈 응답");
@@ -334,8 +334,8 @@ public class OpenAIInternalService {
                 }
                 dailyWrapUpAnswers.add(structuredMessages.toString().trim());
                 
-                log.info("Structured Outputs 하루 마무리 메시지 생성 완료 - 생성된 메시지: {}개, 타입: {}, 톤: {}", 
-                         response.getMessages().size(), response.getType(), response.getTone());
+                log.info("Structured Outputs 하루 마무리 메시지 생성 완료 - 생성된 메시지: {}개",
+                         response.getMessages().size());
                 
             } else {
                 log.warn("Structured Outputs 하루 마무리 메시지 생성 실패: 빈 응답");
