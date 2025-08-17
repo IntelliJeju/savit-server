@@ -79,5 +79,14 @@ public class BudgetController {
                 userId, searchDTO.getMonths(), searchDTO.getCategoryIds());
         return ResponseEntity.ok(result);
     }
+
+    // 사용자 + categoryId 기준 또래 월평균 금액(없으면 0)
+    @GetMapping("/peer-avg/{categoryId}")
+    public ResponseEntity<Map<String, Integer>> getMyPeerAvgByCategoryId(@PathVariable Long categoryId,
+                                                            HttpServletRequest request) {
+        Long userId = jwtUtil.getUserIdFromToken(request);
+        int amount = budgetService.getPeerAvgForUserAndCategory(userId, categoryId);
+        return ResponseEntity.ok(Map.of("amount", amount)); // 없으면 0
+    }
 }
 
