@@ -36,6 +36,8 @@
           AND t.card_id = #{cardId}
           AND t.res_used_date = #{resUsedDate}
           AND t.res_used_time = #{resUsedTime}
+        ORDER BY t.id DESC
+        LIMIT 1
     </select>
 
     <!-- 해당 거래가 사용자 소유인지 여부 검증 -->
