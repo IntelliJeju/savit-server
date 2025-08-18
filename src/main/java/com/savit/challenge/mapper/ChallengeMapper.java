@@ -26,9 +26,9 @@ public interface ChallengeMapper {
     // 리스트 조회
     List<Long> findSuccessfulWeeklyCategories(Long userId);
 
-    List<ChallengeListDTO> findWeeklyChallenges();
+    List<ChallengeListDTO> findWeeklyChallenges(Long userId);
 
-    List<ChallengeListDTO> findMonthlyChallenges(Long categoryid);
+    List<ChallengeListDTO> findMonthlyChallenges(Long userId, Long categoryid);
 
 
     // 참여중인 챌린지 조회

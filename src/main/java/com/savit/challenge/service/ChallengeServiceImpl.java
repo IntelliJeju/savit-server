@@ -37,11 +37,11 @@ public class ChallengeServiceImpl implements ChallengeService {
     public List<ChallengeListDTO> getChallengeList(Long userId) {
         List<Long> categoryids = challengeMapper.findSuccessfulWeeklyCategories(userId);
 
-        List<ChallengeListDTO> weeklyList = challengeMapper.findWeeklyChallenges();
+        List<ChallengeListDTO> weeklyList = challengeMapper.findWeeklyChallenges(userId);
 
         if (!categoryids.isEmpty()) {
             for (Long categoryid : categoryids) {
-                List<ChallengeListDTO> monthlyList = challengeMapper.findMonthlyChallenges(categoryid);
+                List<ChallengeListDTO> monthlyList = challengeMapper.findMonthlyChallenges(userId, categoryid);
                 weeklyList.addAll(monthlyList);
             }
         }
