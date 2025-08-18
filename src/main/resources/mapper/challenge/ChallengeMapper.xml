@@ -47,22 +47,28 @@
         select c.id as challenge_id, c.title, c.start_date, c.end_date, cat.name as categoryName
         from Challenge c
                  inner join Category as cat on c.category_id = cat.id
-        where current_date &lt;  c.start_date
+                 left join ChallengeParticipation cp on c.id = cp.challenge_id
+            and cp.user_id = #{userId}
+            and cp.status = 'PARTICIPATING'
+        where current_date &lt; c.start_date
           and c.duration_weeks = 1
           and cp.challenge_id is null
         order by c.start_date asc
     </select>
 
-    <!-- 1번 기준 충족시 4주 챌린지 목록 조회 -->
+
+    <!-- 1번 기준 충족시 4주 챌린지 목록 조회 (현재 참여중인 챌린지 제외) -->
     <select id="findMonthlyChallenges" resultType="com.savit.challenge.dto.ChallengeListDTO">
         select c.id as challenge_id, c.title, c.start_date, c.end_date, cat.name as categoryName
         from Challenge c
                  inner join Category as cat on c.category_id = cat.id
-        where current_date &lt;  c.start_date
+                 left join ChallengeParticipation cp on c.id = cp.challenge_id
+            and cp.user_id = #{userId}
+            and cp.status = 'PARTICIPATING'
+        where current_date &lt; c.start_date
           and c.duration_weeks = 4
           and c.category_id = #{categoryId}
           and cp.challenge_id is null
-        order by c.start_date asc
     </select>
 
 
