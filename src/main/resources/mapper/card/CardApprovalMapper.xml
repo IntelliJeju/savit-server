@@ -11,7 +11,7 @@
         <result property="cardPassword" column="card_password"/>
         <result property="cardName" column="card_name"/>
     </resultMap>
-    <select id="findDataForApprovalApi" resultType="com.savit.card.dto.ApprovalApiDataDTO">
+    <select id="findDataForApprovalApi" resultMap="approvalApiDataMap">
         SELECT
             u.birth_date,      # AS birthDate
             c.connected_id,    # AS connectedId,
@@ -67,7 +67,8 @@
 
     <select id="findApprovalsByCardId" resultType="com.savit.card.domain.CardApproval">
         SELECT * FROM CardTransaction
-        WHERE card_id = #{cardId}
+        WHERE card_id IN (SELECT id FROM Card WHERE user_id = #{userId}) 
+        AND card_id = #{cardId}
         ORDER BY res_used_date DESC, res_used_time DESC
     </select>
 
