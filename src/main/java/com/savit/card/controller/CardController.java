@@ -9,6 +9,7 @@ import com.savit.security.JwtUtil;
 import com.savit.user.domain.User;
 import com.savit.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,52 +24,57 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/cards")
 @RequiredArgsConstructor
+@Slf4j
 public class CardController {
 
     private final CardService cardService;
     private final JwtUtil jwtUtil;
     private final UserService userService;
     private final ClovaOCRService clovaOCRService;
-    @PostMapping(value="/register", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+
+    // OCR 로 카드 번호 추출
+    @PostMapping(value = "/ocr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> extractCardNumber(@RequestParam("cardImage") MultipartFile cardImage) {
+        try {
+            if (cardImage == null || cardImage.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "카드 이미지가 필요합니다."));
+            }
+
+            String ocrCardNumber = clovaOCRService.extractCardNumber(cardImage);
+
+            return ResponseEntity.ok(Map.of(
+                    "cardNumber", ocrCardNumber,
+                    "message", "카드번호가 성공적으로 인식되었습니다."
+            ));
+        } catch (Exception e) {
+            log.error("OCR 카드번호 추출 중 오류 발생", e);
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "카드번호 인식에 실패했습니다: " + e.getMessage()));
+        }
+    }
+
+    // 카드 등록
+    @PostMapping("/register")
     public ResponseEntity<?> registerCardAndFetch(
-            @RequestParam("organization") String organization,
-            @RequestParam("loginId") String loginId,
-            @RequestParam("loginPw") String loginPw,
-            @RequestParam("birthDate") String birthDate,
-            @RequestParam("cardPassword") String cardPassword,
-            @RequestParam(value="cardImage", required=false) MultipartFile cardImage,
-            HttpServletRequest request) throws Exception {
+            @RequestBody @Valid CardRegisterRequestDTO req,
+            HttpServletRequest request) {
 
-
-        System.out.println("=== @RequestParam으로 받은 데이터 ===");
-        System.out.println("organization: [" + organization + "]");
-        System.out.println("loginId: [" + loginId + "]");
-        System.out.println("loginPw: [" + loginPw + "]");
-        System.out.println("birthDate: [" + birthDate + "]");
-        System.out.println("cardPassword: [" + cardPassword + "]");
-        System.out.println("cardImage: [" + (cardImage != null ? cardImage.getOriginalFilename() : "null") + "]");
 
         try {
-            // DTO 수동 생성
-            CardRegisterRequestDTO req = new CardRegisterRequestDTO();
-            req.setOrganization(organization);
-            req.setLoginId(loginId);
-            req.setLoginPw(loginPw);
-            req.setBirthDate(birthDate);
-            req.setCardPassword(cardPassword);
-            req.setCardImage(cardImage);
-
-            // OCR로 카드번호 추출
-            if(req.getCardImage() != null && !req.getCardImage().isEmpty()){
-                String ocrCardNumber = clovaOCRService.extractCardNumber(req.getCardImage());
-                req.setEncryptedCardNo(ocrCardNumber);
-            }
             Long userId = jwtUtil.getUserIdFromToken(request);
+
+            // 카드번호가 없으면 에러
+            if (req.getEncryptedCardNo() == null || req.getEncryptedCardNo().isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "카드번호가 필요합니다. 먼저 OCR로 카드번호를 인식해주세요."));
+            }
 
             String connectedId =
                     cardService.registerAccount(req);
 
-            String birthForDb = toYyyyDashMmDashDd(birthDate);
+            // 생년월일 업데이트
+            String birthForDb = toYyyyDashMmDashDd(req.getBirthDate());
             if (birthForDb != null && !birthForDb.isBlank()) {
                 userService.updateBirthDateIfNull(userId, birthForDb);
             }
