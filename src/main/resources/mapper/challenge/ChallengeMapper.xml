@@ -49,6 +49,7 @@
                  inner join Category as cat on c.category_id = cat.id
         where current_date &lt;  c.start_date
           and c.duration_weeks = 1
+          and cp.challenge_id is null
         order by c.start_date asc
     </select>
 
@@ -60,6 +61,7 @@
         where current_date &lt;  c.start_date
           and c.duration_weeks = 4
           and c.category_id = #{categoryId}
+          and cp.challenge_id is null
         order by c.start_date asc
     </select>
 
