@@ -174,4 +174,31 @@
         where end_date = #{endDate} and start_date &lt;= #{endDate} order by id
     </select>
 
+    <select id="findChallengeForJoin" resultType="com.savit.challenge.domain.ChallengeVO">
+        SELECT id, total_participants, version
+        FROM Challenge
+        WHERE id = #{challengeId}
+    </select>
+
+    <update id="tryReserveSeatCAS">
+        UPDATE Challenge
+        SET version = version + 1
+        WHERE id = #{challengeId}
+        AND version = #{currentVersion}
+        AND (
+        total_participants IS NULL
+        OR (
+        (SELECT COUNT(*) FROM ChallengeParticipation WHERE challenge_id = #{challengeId})
+            &lt; total_participants
+        )
+        )
+    </update>
+
+    <select id="findForUpdate" resultType="com.savit.challenge.domain.ChallengeVO">
+        SELECT id, total_participants
+        FROM Challenge
+        WHERE id = #{challengeId}
+            FOR UPDATE
+    </select>
+
 </mapper>

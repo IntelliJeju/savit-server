@@ -19,4 +19,5 @@ public class ChallengeVO {
     private Long categoryId;
     private Long totalParticipants;
     private Long joinedParticipants;
+    private int version;
 }
