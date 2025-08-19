@@ -27,7 +27,7 @@
     <!-- challenge 타입 amount 일때, 참여자들 현황 -->
     <select id="selectParticipantsWithAmount" resultType="com.savit.challenge.dto.ParticipantInfo">
         select u.nickname          as nickName,
-               cp.challenge_amount as challengeAmount,
+               coalesce(cp.challenge_amount,0.00) as challengeAmount,
                cp.status
         from ChallengeParticipation as cp
                  inner join user as u
@@ -37,7 +37,7 @@
 
     <!-- challenge 타입 count 일때, 참여자들 현황-->
     <select id="selectParticipantsWithCount" resultType="com.savit.challenge.dto.ParticipantInfo">
-        select u.nickname as nickName, cp.challenge_count as challengeCount, cp.status
+        select u.nickname as nickName, coalesce(cp.challenge_count,0) as challengeCount, cp.status
         from ChallengeParticipation as cp
                  inner join user as u on cp.user_id = u.id
         where cp.challenge_id = #{challengeId}

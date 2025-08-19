@@ -18,7 +18,7 @@ public class ParticipantInfo {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private BigDecimal challengeAmount;
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private int challengeCount;
+    private Long challengeCount;
 
     private String status;
 
