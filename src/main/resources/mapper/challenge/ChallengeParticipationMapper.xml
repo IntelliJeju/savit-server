@@ -101,7 +101,7 @@
             cp.challenge_count as current_count,
             cp.challenge_amount as current_amount
         from ChallengeParticipation as cp
-        inner join Challenge as c on cp.challenge_id = c.id
+                 inner join Challenge as c on cp.challenge_id = c.id
         where cp.id = #{participationId}
     </select>
 
@@ -126,23 +126,29 @@
 
     <select id="selectChallengeSummary" resultType="com.savit.challenge.dto.ChallengeSummaryDTO">
         select cp.challenge_id, c.title, c.start_date,  c.end_date,
-           cp.status, cp.my_fee, cp.prize
+               cp.status, cp.my_fee, cp.prize
         from challengeParticipation as cp join challenge as c on cp.challenge_id =c.id
         where cp.user_id = #{userId}  and cp.status IN ('SUCCESS', 'FAIL')
     </select>
 
     <!-- 새로 실패한 참여자 목록 조회 (알림 발송용) -->
     <select id="findNewlyFailedParticipants" resultType="com.savit.challenge.dto.ChallengeFailedParticipantDTO">
-        SELECT 
+        SELECT
             cp.user_id AS userId,
             cp.challenge_id AS challengeId,
             c.title AS challengeTitle,
             cp.status AS status
         FROM ChallengeParticipation cp
-        INNER JOIN Challenge c ON cp.challenge_id = c.id
+                 INNER JOIN Challenge c ON cp.challenge_id = c.id
         WHERE cp.status = 'FAIL'
           AND DATE_FORMAT(cp.completed_at, '%Y%m%d') = #{targetDate}
         ORDER BY cp.completed_at DESC
+    </select>
+
+    <select id="countByChallengeId" resultType="long">
+        SELECT COUNT(*)
+        FROM ChallengeParticipation
+        WHERE challenge_id = #{challengeId}
     </select>
 
 </mapper>

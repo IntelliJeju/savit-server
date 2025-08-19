@@ -1,0 +1,39 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.savit.challenge.mapper.ChallengeResultMapper">
+
+    <select id="findMyChallengeResult"
+            parameterType="map"
+            resultType="com.savit.challenge.dto.ChallengeResultDTO">
+        <![CDATA[
+        SELECT
+            c.id                AS challengeId,
+            c.title             AS title,
+            c.start_date        AS startDate,
+            c.end_date          AS endDate,
+            c.type              AS type,
+            c.target_count      AS goalCount,
+            c.target_amount     AS goalAmount,
+            cp.status           AS myStatus,
+            cp.my_fee           AS myDeposit,
+            cp.challenge_count  AS actualCount,
+            cp.challenge_amount AS actualAmount,
+            COUNT(DISTINCT cp2.id)                                                   AS totalParticipants,
+            SUM(CASE WHEN cp2.status IN ('PARTICIPATING','SUCCESS') THEN 1 ELSE 0 END) AS survivorCount,
+            SUM(cp2.my_fee)                                                          AS totalDeposit,
+            SUM(CASE WHEN cp2.status = 'FAIL' THEN cp2.my_fee ELSE 0 END)            AS forfeitedDeposit,
+            CASE WHEN c.end_date < CURRENT_DATE THEN TRUE ELSE FALSE END              AS ended
+        FROM Challenge c
+                 INNER JOIN ChallengeParticipation cp  ON c.id = cp.challenge_id
+                 LEFT  JOIN ChallengeParticipation cp2 ON c.id = cp2.challenge_id
+        WHERE cp.user_id = #{userId}
+          AND c.id      = #{challengeId}
+        GROUP BY
+            c.id, c.title, c.start_date, c.end_date, c.type,
+            c.target_count, c.target_amount,
+            cp.status, cp.my_fee, cp.challenge_count, cp.challenge_amount
+        ]]>
+    </select>
+
+</mapper>

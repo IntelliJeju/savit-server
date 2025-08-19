@@ -52,4 +52,13 @@ public interface ChallengeMapper {
     // 상세조회
     ChallengeVO findById(Long challengeId);
 
+    // 낙관락용 정원/버전 읽기
+    ChallengeVO findChallengeForJoin(@Param("challengeId") Long challengeId);
+
+    // 낙관락(CAS): 정원 체크 + version 증가 한번에 시도
+    int tryReserveSeatCAS(@Param("challengeId") Long challengeId,
+                          @Param("currentVersion") int currentVersion);
+
+    // 막판 경쟁 시 직렬화
+    ChallengeVO findForUpdate(@Param("challengeId") Long challengeId);
 }

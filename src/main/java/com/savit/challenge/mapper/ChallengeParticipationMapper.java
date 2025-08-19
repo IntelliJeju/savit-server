@@ -48,4 +48,6 @@ public interface ChallengeParticipationMapper {
     
     // 새로 실패한 참여자 목록 조회 (알림 발송용)
     List<ChallengeFailedParticipantDTO> findNewlyFailedParticipants(@Param("targetDate") String targetDate);
+
+    long countByChallengeId(@Param("challengeId") Long challengeId);
 }
