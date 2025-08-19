@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional; // ✅ 추가
 
 @Slf4j
 @Service
@@ -92,7 +93,6 @@ public class CardService {
         );
         log.info("[CODEF] createAccount 응답 = {}", resp);
 
-
         Map<String, Object> map = new ObjectMapper().readValue(resp, Map.class);
         Object dataObj = map.get("data");
 
@@ -107,6 +107,70 @@ public class CardService {
         }
 
         return cardList;
+    }
+
+    private String digitsOnly(String s) {
+        return s == null ? "" : s.replaceAll("\\D", "");
+    }
+
+    private String userLast4(String userInput) {
+        String d = digitsOnly(userInput);
+        return d.length() >= 4 ? d.substring(d.length() - 4) : d;
+    }
+
+    private String visiblePrefix(String masked, int n) {
+        if (masked == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (char c : masked.toCharArray()) {
+            if (Character.isDigit(c)) sb.append(c);
+            else if (c == '*') break; // 마스킹 시작되면 중단
+        }
+        String all = sb.toString();
+        return all.length() > n ? all.substring(0, n) : all;
+    }
+
+    private String visibleSuffix(String masked, int n) {
+        if (masked == null) return "";
+        StringBuilder revDigits = new StringBuilder();
+        for (int i = masked.length() - 1; i >= 0; i--) {
+            char c = masked.charAt(i);
+            if (Character.isDigit(c)) revDigits.append(c);
+            else if (c == '*') break;
+        }
+        String suf = revDigits.reverse().toString();
+        return suf.length() > n ? suf.substring(suf.length() - n) : suf;
+    }
+
+    public boolean matchesUserCardMasked(Map<String, Object> codefCard,
+                                         String requestedOrganization,
+                                         String userInputCardNo) {
+        String orgInResp = (String) (codefCard.getOrDefault("organization", codefCard.get("resIssuerCode")));
+        if (orgInResp != null && requestedOrganization != null && !requestedOrganization.equals(orgInResp)) {
+            return false;
+        }
+
+        String masked = (String) codefCard.get("resCardNo");
+        String visPrefix = visiblePrefix(masked, 8);
+        String visSuffix = visibleSuffix(masked, 4);
+
+        String userDigits = digitsOnly(userInputCardNo);
+        if (userDigits.length() < 10) return false;
+
+        String userPrefix8 = userDigits.substring(0, Math.min(8, userDigits.length()));
+        String userSuf4    = userLast4(userDigits);
+
+        boolean prefixOk = visPrefix.isEmpty() || userPrefix8.startsWith(visPrefix);
+        boolean suffixOk = visSuffix.isEmpty() || userSuf4.endsWith(visSuffix);
+
+        return prefixOk && suffixOk;
+    }
+
+    public Optional<Map<String, Object>> pickOneMasked(List<Map<String, Object>> cardList,
+                                                       String organization,
+                                                       String userInputCardNo) {
+        return cardList.stream()
+                .filter(c -> matchesUserCardMasked(c, organization, userInputCardNo))
+                .findFirst();
     }
 
     public void saveCards(List<Map<String, Object>> cardDataList,
