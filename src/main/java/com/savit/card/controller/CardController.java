@@ -55,7 +55,11 @@ public class CardController {
     }
 
     // 카드 등록
-    @PostMapping("/register")
+    @PostMapping(
+            value = "/register",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<?> registerCardAndFetch(
             @RequestBody @Valid CardRegisterRequestDTO req,
             HttpServletRequest request) {
