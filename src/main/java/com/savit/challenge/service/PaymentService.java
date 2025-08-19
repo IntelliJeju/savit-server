@@ -233,7 +233,7 @@ public class PaymentService {
         tx.setResUsedDate(dateFormat.format(paidDate));
         tx.setResUsedTime(timeFormat.format(paidDate));
         tx.setResUsedAmount(String.valueOf(pay.getAmount().longValue()));
-        tx.setResCancelYn("N");
+        tx.setResCancelYn("0");
         tx.setResCancelAmount("");
         tx.setResTotalAmount("");
         tx.setBudgetCategoryId(null);
