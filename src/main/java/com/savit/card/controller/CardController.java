@@ -6,7 +6,6 @@ import com.savit.card.dto.CardRenameRequestDTO;
 import com.savit.card.service.CardService;
 import com.savit.card.service.ClovaOCRService;
 import com.savit.security.JwtUtil;
-import com.savit.user.domain.User;
 import com.savit.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -64,7 +62,6 @@ public class CardController {
             @RequestBody @Valid CardRegisterRequestDTO req,
             HttpServletRequest request) {
 
-
         try {
             Long userId = jwtUtil.getUserIdFromToken(request);
 
@@ -74,8 +71,7 @@ public class CardController {
                         .body(Map.of("error", "카드번호가 필요합니다. 먼저 OCR로 카드번호를 인식해주세요."));
             }
 
-            String connectedId =
-                    cardService.registerAccount(req);
+            String connectedId = cardService.registerAccount(req);
 
             // 생년월일 업데이트
             String birthForDb = toYyyyDashMmDashDd(req.getBirthDate());
@@ -83,18 +79,38 @@ public class CardController {
                 userService.updateBirthDateIfNull(userId, birthForDb);
             }
 
-            List<Map<String,Object>> cards =
-                    cardService.fetchCardList(
-                            connectedId,
-                            req.getOrganization(),
-                            req.getBirthDate()
-                    );
+            List<Map<String,Object>> cards = cardService.fetchCardList(
+                    connectedId,
+                    req.getOrganization(),
+                    req.getBirthDate()
+            );
 
-            cardService.saveCards(cards, connectedId, req.getOrganization(), userId, req.getEncryptedCardNo(), req.getCardPassword());
+            var pickedOpt = cardService.pickOneMasked(
+                    cards,
+                    req.getOrganization(),
+                    req.getEncryptedCardNo()
+            );
+
+            if (pickedOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "입력한 카드번호와 일치하는 카드를 찾지 못했습니다. (마스킹 포함 비교)"
+                ));
+            }
+
+            Map<String, Object> picked = pickedOpt.get();
+
+            cardService.saveCards(
+                    List.of(picked),
+                    connectedId,
+                    req.getOrganization(),
+                    userId,
+                    req.getEncryptedCardNo(),
+                    req.getCardPassword()
+            );
 
             return ResponseEntity.ok(Map.of(
                     "connectedId", connectedId,
-                    "cards",       cards
+                    "cards", List.of(picked)
             ));
         } catch (Exception e) {
             return ResponseEntity.status(500)
