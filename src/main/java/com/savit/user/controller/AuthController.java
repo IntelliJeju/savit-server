@@ -51,7 +51,7 @@ public class AuthController {
         // 에러 처리
         if (error != null) {
             log.error("카카오 인증 에러: {}", error);
-            String errorUrl = "http://localhost:5173/auth/error?message=" +
+            String errorUrl = "https://savit.cloud/auth/error?message=" +
                     URLEncoder.encode("카카오 인증이 취소되었습니다.", "UTF-8");
             response.sendRedirect(errorUrl);
             return;
@@ -60,7 +60,7 @@ public class AuthController {
         // code 파라미터 체크
         if (code == null || code.trim().isEmpty()) {
             log.error("인가 코드가 없습니다.");
-            String errorUrl = "http://localhost:5173/auth/error?message=" +
+            String errorUrl = "https://savit.cloud/auth/error?message=" +
                     URLEncoder.encode("인가 코드가 필요합니다.", "UTF-8");
             response.sendRedirect(errorUrl);
             return;
@@ -77,7 +77,7 @@ public class AuthController {
             log.info("refreshToken = {}", loginResponse.getRefreshToken());
 
             // 성공 시 프론트엔드로 리다이렉트 (토큰 포함)
-            String redirectUrl = "http://localhost:5173/auth/login/callback" +
+            String redirectUrl = "https://savit.cloud/auth/login/callback" +
                     "?accessToken=" + URLEncoder.encode(loginResponse.getAccessToken(), "UTF-8") +
                     "&refreshToken=" + URLEncoder.encode(loginResponse.getRefreshToken(), "UTF-8");
 
@@ -88,7 +88,7 @@ public class AuthController {
         } catch (Exception e) {
             log.error("카카오 로그인 처리 실패", e);
             try {
-                String errorUrl = "http://localhost:5173/auth/error?message=" +
+                String errorUrl = "https://savit.cloud/auth/error?message=" +
                         URLEncoder.encode("로그인 처리 중 오류가 발생했습니다.", "UTF-8");
                 response.sendRedirect(errorUrl);
             } catch (IOException ioException) {
